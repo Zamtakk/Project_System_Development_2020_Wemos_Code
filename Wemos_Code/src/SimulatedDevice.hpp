@@ -293,7 +293,7 @@ void handlePotmeter()
 
     Potmeter_value = analogRead(PIN_POTMETER);
 
-    if (Potmeter_value % 8 < 3 && abs(Potmeter_value - Potmeter_previous_value) > 4)
+    if (Potmeter_value % 8 < 5 && abs(Potmeter_value - Potmeter_previous_value) > 4)
     {
         Potmeter_previous_value = Potmeter_value;
         Serial.printf("Potmeter value: %d\n", Potmeter_value);
