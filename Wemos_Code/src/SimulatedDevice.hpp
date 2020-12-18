@@ -3,12 +3,11 @@
 
 #include <ESP8266WiFi.h>
 #include <ESP8266WiFiMulti.h>
-
 #include <WebSocketsClient.h>
-
 #include <ArduinoJson.h>
-
 #include <Hash.h>
+#include <math.h>
+#include <EEPROM.h>
 
 #include "CommandTypes.hpp"
 
@@ -20,17 +19,22 @@
 #define PIN_LED_2 12 //D6
 #define PIN_LED_3 13 //D7
 
-#define DEVICE_TYPE "ExampleDevice"
+#define DEVICE_TYPE "SimulatedDevice"
 
 // Global variables
 ESP8266WiFiMulti wifi;
 WebSocketsClient webSocket;
 
-char UUID[10];
+char UUID[11];
 
 bool websocketConnected = false;
 
+int LED_1_value = 0;
+int LED_2_value = 0;
+int LED_3_value = 0;
+
 // Forward Declaration
+
 void initIO();
 void initWifi();
 void initWebsocket();
@@ -50,7 +54,10 @@ void generateUUID();
 // Setup
 void setup()
 {
+    delay(15000);
+
     initIO();
+
     generateUUID();
 
     initWifi();
@@ -60,13 +67,19 @@ void setup()
 
 void loop()
 {
-    delay(100);
     webSocket.loop();
 
     handleButtons();
+
+    handlePotmeter();
+
+    handleLEDs();
 }
 
-// Function declarations
+// Function definitions
+/*!
+    @brief Starts the Serial connection and initializes all the pins
+*/
 void initIO()
 {
     Serial.begin(115200);
@@ -82,6 +95,9 @@ void initIO()
     pinMode(PIN_LED_3, OUTPUT);
 }
 
+/*!
+    @brief Starts the WiFi connection
+*/
 void initWifi()
 {
     wifi.addAP("PJSDV_TEMP", "allhailthemightypi");
@@ -96,6 +112,9 @@ void initWifi()
     Serial.println(WiFi.localIP());
 }
 
+/*!
+    @brief Starts the Websocket Client and connects with the server.
+*/
 void initWebsocket()
 {
     // server address, port and URL
@@ -108,6 +127,12 @@ void initWebsocket()
     webSocket.setReconnectInterval(2000);
 }
 
+/*!
+    @brief Interrupt that is called when a new message is received by the websocket client
+    @param[in] type Event type that is invoked, ex. CONNECTED, DISCONNECTED or new TEXT
+    @param[in] payload A pointer to the payload of the message, in this case a JSON message
+    @param[in] length Length of the message that the pointer is pointing to.
+*/
 void websocketEvent(WStype_t type, uint8_t *payload, size_t length)
 {
     switch (type)
@@ -154,10 +179,45 @@ void websocketEvent(WStype_t type, uint8_t *payload, size_t length)
     }
 }
 
+/*!
+    @brief Reads the incoming message and activates the actuators or sends devices information back.
+*/
 void handleMessage(JsonObject message)
 {
+    switch ((SimulatedDevice)message["command"])
+    {
+    case LED_1_CHANGE:
+        if ((int)message["value"] <= 1 && (int)message["value"] >= 0)
+        {
+            LED_1_value = (int)message["value"];
+        }
+        break;
+
+    case LED_2_CHANGE:
+        if ((int)message["value"] <= 1 && (int)message["value"] >= 0)
+        {
+            LED_2_value = (int)message["value"];
+        }
+        break;
+
+    case LED_3_CHANGE:
+        if ((int)message["value"] <= 1 && (int)message["value"] >= 0)
+        {
+            LED_3_value = (int)message["value"];
+        }
+        break;
+
+    default:
+        Serial.printf("[Error] Unsupported command received: %d", (int)message["command"]);
+        break;
+    }
 }
 
+/*!
+    @brief Sends a new message over the Websocket connection with an integer as JSON value
+    @param[in] command The command send in the JSON packet, see CommandTypes.hpp
+    @param[in] value An integer value that is send with the command as parameter.
+*/
 void sendIntMessage(int command, int value)
 {
     StaticJsonDocument<200> message;
@@ -174,6 +234,30 @@ void sendIntMessage(int command, int value)
     webSocket.sendTXT(stringMessage);
 }
 
+/*!
+    @brief Sends a new message over the Websocket connection with an string as JSON value
+    @param[in] command The command send in the JSON packet, see CommandTypes.hpp
+    @param[in] value A string value that is send with the command as parameter.
+*/
+void sendStringMessage(int command, char *value)
+{
+    StaticJsonDocument<200> message;
+    char stringMessage[200];
+
+    message["UUID"] = UUID;
+    message["Type"] = DEVICE_TYPE;
+    message["command"] = command;
+    message["value"] = value;
+
+    serializeJson(message, stringMessage);
+
+    Serial.printf("Sending message: %s\n", stringMessage);
+    webSocket.sendTXT(stringMessage);
+}
+
+/*!
+    @brief Reads all the buttons and sends an update if something changed
+*/
 void handleButtons()
 {
     int button_1_State = 1;
@@ -201,29 +285,96 @@ void handleButtons()
     }
 }
 
+/*!
+    @brief Reads the potmeter and sends an update if something changed
+*/
 void handlePotmeter()
 {
+    int Potmeter_value = 0;
+    static int Potmeter_previous_value = 0;
+
+    Potmeter_value = analogRead(PIN_POTMETER);
+
+    if (Potmeter_value % 8 < 3 && abs(Potmeter_value - Potmeter_previous_value) > 4)
+    {
+        Potmeter_previous_value = Potmeter_value;
+        Serial.printf("Potmeter value: %d\n", Potmeter_value);
+        sendIntMessage(POTMETER_CHANGE, Potmeter_value);
+    }
 }
 
+/*!
+    @brief Checks if the LED state is still the same as the previous and updates the LED accordingly
+*/
 void handleLEDs()
 {
+    static int LED_1_previous_value = 0;
+    static int LED_2_previous_value = 0;
+    static int LED_3_previous_value = 0;
+
+    if (LED_1_value != LED_1_previous_value)
+    {
+        LED_1_previous_value = LED_1_value;
+        digitalWrite(PIN_LED_1, LED_1_value);
+        Serial.printf("Led 1 updated to %d!", LED_1_value);
+    }
+
+    if (LED_2_value != LED_2_previous_value)
+    {
+        LED_2_previous_value = LED_2_value;
+        digitalWrite(PIN_LED_2, LED_2_value);
+        Serial.printf("Led 2 updated to %d!", LED_2_value);
+    }
+
+    if (LED_3_value != LED_3_previous_value)
+    {
+        LED_3_previous_value = LED_3_value;
+        digitalWrite(PIN_LED_3, LED_3_value);
+        Serial.printf("Led 3 updated to %d!", LED_3_value);
+    }
 }
 
+/*!
+    @brief Read the UUID from EEPROM or generates a new one if none is present
+*/
 void generateUUID()
 {
-    strcpy(UUID, "5794826341");
-    // char tempID[50];
-    // char buffer[10];
-    // int tempIDpos = 0;
-    // randomSeed(analogRead(PIN_POTMETER));
+    uint addr = 0;
 
-    // for(int i = 0; i < 10; i++){
-    //     itoa(random(65535), buffer, 10);
-    //     for(int i = 0; i < sizeof(buffer); i++){
+    struct
+    {
+        uint8_t code[3];
+        char uuid[11] = "";
+    } data;
 
-    //     }
-    // }
-    // randNumber = random(300);
-    // Serial.println(randNumber);
-    // delay(50);
+    EEPROM.begin(512);
+    EEPROM.get(addr, data);
+
+    if (data.code[0] == 34 && data.code[1] == 42 && data.code[2] == 16)
+    {
+        strcpy(UUID, data.uuid);
+        Serial.printf("[SETUP] UUID loaded! ID is: %s\n", UUID);
+        return;
+    }
+    else
+    {
+        randomSeed(ESP.getCycleCount());
+
+        char buffer[1];
+        for (int i = 0; i < 10; i++)
+        {
+            itoa(random(9), buffer, 10);
+            UUID[i] = buffer[0];
+        }
+        UUID[10] = '\0';
+        Serial.printf("[SETUP] New UUID generated! New ID is: %s\n", UUID);
+
+        data.code[0] = 34;
+        data.code[1] = 42;
+        data.code[2] = 16;
+        strcpy(data.uuid, UUID);
+    }
+
+    EEPROM.put(addr, data);
+    EEPROM.commit();
 }
