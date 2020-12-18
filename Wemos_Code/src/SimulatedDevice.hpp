@@ -206,7 +206,7 @@ void handleMessage(JsonObject message)
         break;
 
     default:
-        Serial.printf("[Error] Unsupported command received: %d", (int)message["command"]);
+        Serial.printf("[Error] Unsupported command received: %d\n", (int)message["command"]);
         break;
     }
 }
@@ -314,21 +314,21 @@ void handleLEDs()
     {
         LED_1_previous_value = LED_1_value;
         digitalWrite(PIN_LED_1, LED_1_value);
-        Serial.printf("Led 1 updated to %d!", LED_1_value);
+        Serial.printf("Led 1 updated to %d!\n", LED_1_value);
     }
 
     if (LED_2_value != LED_2_previous_value)
     {
         LED_2_previous_value = LED_2_value;
         digitalWrite(PIN_LED_2, LED_2_value);
-        Serial.printf("Led 2 updated to %d!", LED_2_value);
+        Serial.printf("Led 2 updated to %d!\n", LED_2_value);
     }
 
     if (LED_3_value != LED_3_previous_value)
     {
         LED_3_previous_value = LED_3_value;
         digitalWrite(PIN_LED_3, LED_3_value);
-        Serial.printf("Led 3 updated to %d!", LED_3_value);
+        Serial.printf("Led 3 updated to %d!\n", LED_3_value);
     }
 }
 
