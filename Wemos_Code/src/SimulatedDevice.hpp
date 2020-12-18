@@ -54,8 +54,6 @@ void generateUUID();
 // Setup
 void setup()
 {
-    delay(15000);
-
     initIO();
 
     generateUUID();
