@@ -37,6 +37,6 @@ enum Chair
     CHAIR_BUTTON_CHANGE = 4001,
     CHAIR_LED_CHANGE = 4002,
     CHAIR_VIBRATOR_CHANGE = 4003
-}
+};
 
 #endif
