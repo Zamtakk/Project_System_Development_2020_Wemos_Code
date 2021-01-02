@@ -180,7 +180,7 @@ void websocketEvent(WStype_t type, uint8_t *payload, size_t length)
 */
 void handleMessage(JsonObject message)
 {
-    switch ((SimulatedDevice)message["command"])
+    switch ((Chair)message["command"])
     {
     case CHAIR_LED_CHANGE:
         if ((int)message["value"] <= 1 && (int)message["value"] >= 0)
