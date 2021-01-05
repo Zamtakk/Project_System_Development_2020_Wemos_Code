@@ -224,6 +224,27 @@ void sendIntMessage(int command, int value)
 }
 
 /*!
+    @brief Sends a new message over the Websocket connection with an bool as JSON value
+    @param[in] command The command send in the JSON packet, see CommandTypes.hpp
+    @param[in] value A boolean value that is send with the command as parameter.
+*/
+void sendBoolMessage(int command, bool value)
+{
+    StaticJsonDocument<200> message;
+    char stringMessage[200];
+
+    message["UUID"] = UUID;
+    message["Type"] = DEVICE_TYPE;
+    message["command"] = command;
+    message["value"] = value;
+
+    serializeJson(message, stringMessage);
+
+    Serial.printf("Sending message: %s\n", stringMessage);
+    webSocket.sendTXT(stringMessage);
+}
+
+/*!
     @brief Sends a new message over the Websocket connection with an string as JSON value
     @param[in] command The command send in the JSON packet, see CommandTypes.hpp
     @param[in] value A string value that is send with the command as parameter.
@@ -260,7 +281,7 @@ void handleButton()
     {
         Serial.printf("Buttons state: %d\n", button_State);
         button_PreviousState = button_State;
-        sendIntMessage(CHAIR_BUTTON_CHANGE, !button_State);
+        sendBoolMessage(CHAIR_BUTTON_CHANGE, !button_State);
     }
 }
 
