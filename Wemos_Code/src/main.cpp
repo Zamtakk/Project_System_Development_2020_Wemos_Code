@@ -1,4 +1,8 @@
-#define SIMULATED_DEVICE
+#define CHAIR
+
+#ifdef CHAIR
+#include "DeviceChair.hpp"
+#endif
 
 #ifdef SIMULATED_DEVICE
 #include "SimulatedDevice.hpp"
