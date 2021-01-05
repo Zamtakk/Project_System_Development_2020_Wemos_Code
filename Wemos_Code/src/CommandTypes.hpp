@@ -31,7 +31,7 @@ enum SimulatedDevice
     LED_3_CHANGE = 3005
 };
 
-enum Chair
+enum DeviceCommands
 {
     CHAIR_FORCESENSOR_CHANGE = 4000,
     CHAIR_BUTTON_CHANGE = 4001,
