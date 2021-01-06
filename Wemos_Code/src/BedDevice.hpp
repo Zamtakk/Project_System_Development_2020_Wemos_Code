@@ -15,9 +15,8 @@
 #define PIN_BUTTON 5 //D1
 #define PIN_FORCESENSOR A0
 #define PIN_LED 14 //D5
-#define PIN_VIBRATOR 12 //D6
 
-#define DEVICE_TYPE "Chair"
+#define DEVICE_TYPE "Bed"
 
 // Global variables
 ESP8266WiFiMulti wifi;
@@ -46,7 +45,6 @@ void sendBoolMessage(int command, bool value);
 void handleButton();
 void handleForceSensor();
 void handleLED();
-void handleVibrator();
 
 void generateUUID();
 
@@ -71,8 +69,6 @@ void loop()
     handleForceSensor();
 
     handleLED();
-
-    handleVibrator();
 }
 
 // Function definitions
@@ -89,7 +85,6 @@ void initIO()
     pinMode(PIN_FORCESENSOR, INPUT);
 
     pinMode(PIN_LED, OUTPUT);
-    pinMode(PIN_VIBRATOR, OUTPUT);
 }
 
 /*!
@@ -181,19 +176,12 @@ void websocketEvent(WStype_t type, uint8_t *payload, size_t length)
 */
 void handleMessage(JsonObject message)
 {
-    switch ((ChairCommands)message["command"])
+    switch ((BedCommands)message["command"])
     {
-    case CHAIR_LED_CHANGE:
+    case BED_LED_CHANGE:
         if ((int)message["value"] <= 1 && (int)message["value"] >= 0)
         {
             LED_value = (int)message["value"];
-        }
-        break;
-
-    case CHAIR_VIBRATOR_CHANGE:
-        if ((int)message["value"] <= 1 && (int)message["value"] >= 0)
-        {
-            Vibrator_value = (int)message["value"];
         }
         break;
 
@@ -282,7 +270,7 @@ void handleButton()
     {
         Serial.printf("Buttons state: %d\n", button_State);
         button_PreviousState = button_State;
-        sendBoolMessage(CHAIR_BUTTON_CHANGE, !button_State);
+        sendBoolMessage(BED_BUTTON_CHANGE, !button_State);
     }
 }
 
@@ -300,7 +288,7 @@ void handleForceSensor()
     {
         ForceSensor_previous_value = ForceSensor_value;
         Serial.printf("Force sensor value: %d\n", ForceSensor_value);
-        sendIntMessage(CHAIR_FORCESENSOR_CHANGE, ForceSensor_value);
+        sendIntMessage(BED_FORCESENSOR_CHANGE, ForceSensor_value);
     }
 }
 
@@ -316,21 +304,6 @@ void handleLED()
         LED_previous_value = LED_value;
         digitalWrite(PIN_LED, LED_value);
         Serial.printf("Led updated to %d!\n", LED_value);
-    }
-}
-
-/*!
-    @brief Checks if the LED state is still the same as the previous and updates the LED accordingly
-*/
-void handleVibrator()
-{
-    static int Vibrator_previous_value = 0;
-
-    if (Vibrator_value != Vibrator_previous_value)
-    {
-        Vibrator_previous_value = Vibrator_value;
-        digitalWrite(PIN_VIBRATOR, Vibrator_value);
-        Serial.printf("Vibrator updated to %d!\n", Vibrator_value);
     }
 }
 
