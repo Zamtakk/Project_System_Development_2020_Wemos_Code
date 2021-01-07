@@ -8,13 +8,17 @@
 #include <Hash.h>
 #include <math.h>
 #include <EEPROM.h>
+#include <Wire.h>
 
 #include "CommandTypes.hpp"
 
 // Defines
-#define PIN_BUTTON 5 //D1
+#define PIN_BUTTON 16 //D0
 #define PIN_FORCESENSOR A0
-#define PIN_LED 14 //D5
+#define PIN_LED 2 //D4
+
+#define I2C_SDL 5 //D1
+#define I2C_SDA 4 //D2
 
 #define DEVICE_TYPE "Bed"
 
@@ -77,14 +81,9 @@ void loop()
 */
 void initIO()
 {
+    Wire.begin();
     Serial.begin(115200);
     Serial.printf("\n\n\n");
-
-    pinMode(PIN_BUTTON, INPUT_PULLUP);
-
-    pinMode(PIN_FORCESENSOR, INPUT);
-
-    pinMode(PIN_LED, OUTPUT);
 }
 
 /*!
