@@ -1,4 +1,4 @@
-#define SIMULATED_DEVICE
+#define DOOR
 
 #ifdef CHAIR
 #include "DeviceChair.hpp"
@@ -6,6 +6,10 @@
 
 #ifdef SIMULATED_DEVICE
 #include "SimulatedDevice.hpp"
+#endif
+
+#ifdef DOOR
+#include "DeviceDoor.hpp"
 #endif
 
 #ifdef WIB
