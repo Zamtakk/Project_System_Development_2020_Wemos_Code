@@ -215,7 +215,7 @@ void handleMessage(JsonObject message)
         deviceInfoMessage["command"] = DEVICEINFO;
         deviceInfoMessage["ledStateInside"] = output0State;
         deviceInfoMessage["ledStateOutside"] = output1State;
-        deviceInfoMessage["doorState"] = input0State;
+        deviceInfoMessage["doorOpen"] = input0State;
         deviceInfoMessage["doorLocked"] = false;
 
         serializeJson(deviceInfoMessage, stringMessage);
