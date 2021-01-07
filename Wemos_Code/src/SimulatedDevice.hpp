@@ -182,7 +182,7 @@ void websocketEvent(WStype_t type, uint8_t *payload, size_t length)
 */
 void handleMessage(JsonObject message)
 {
-    switch ((SimulatedDeviceCommands)message["command"])
+    switch ((int)message["command"])
     {
     case DEVICEINFO:
     {
