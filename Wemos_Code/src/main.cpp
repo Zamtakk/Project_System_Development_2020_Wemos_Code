@@ -11,3 +11,7 @@
 #ifdef DOOR
 #include "DeviceDoor.hpp"
 #endif
+
+#ifdef WIB
+#include "WIB.hpp"
+#endif
