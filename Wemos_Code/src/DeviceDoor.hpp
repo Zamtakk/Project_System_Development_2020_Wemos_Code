@@ -36,7 +36,7 @@ bool input1State = false;
 bool output0State = false;
 bool output1State = false;
 uint16_t analogInput0Value = 0;
-int Servo_value =0;
+int Servo_value = 0;
 
 // Forward Declaration
 
