@@ -195,11 +195,31 @@ void websocketEvent(WStype_t type, uint8_t *payload, size_t length)
 */
 void handleMessage(JsonObject message)
 {
-    switch ((BedCommands)message["command"])
+    switch ((int)message["command"])
     {
+    case DEVICEINFO:
+    {
+        StaticJsonDocument<200> deviceInfoMessage;
+        char stringMessage[200];
+
+        deviceInfoMessage["UUID"] = UUID;
+        deviceInfoMessage["Type"] = DEVICE_TYPE;
+        deviceInfoMessage["command"] = DEVICEINFO;
+        deviceInfoMessage["ledState"] = output0State;
+        deviceInfoMessage["pressureValue"] = analogInput0Value;
+
+        serializeJson(deviceInfoMessage, stringMessage);
+
+        Serial.printf("Sending DEVICEINFO: %s\n", stringMessage);
+        webSocket.sendTXT(stringMessage);
+        break;
+    }
+    
     case BED_LED_CHANGE:
+    {
         output0State = (bool)message["value"];
         break;
+    }
 
     default:
         Serial.printf("[Error] Unsupported command received: %d\n", (int)message["command"]);
