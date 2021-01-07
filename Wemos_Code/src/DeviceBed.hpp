@@ -214,7 +214,7 @@ void handleMessage(JsonObject message)
         webSocket.sendTXT(stringMessage);
         break;
     }
-    
+
     case BED_LED_CHANGE:
     {
         output0State = (bool)message["value"];
