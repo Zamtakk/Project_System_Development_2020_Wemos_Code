@@ -1,7 +1,7 @@
 #define BED
 
 #ifdef CHAIR
-#include "DeviceChair.hpp"
+#include "Chair.hpp"
 #endif
 
 #ifdef SIMULATED_DEVICE
@@ -9,7 +9,11 @@
 #endif
 
 #ifdef BED
-#include "DeviceBed.hpp"
+#include "Bed.hpp"
+#endif
+
+#ifdef DOOR
+#include "Door.hpp"
 #endif
 
 #ifdef WIB
