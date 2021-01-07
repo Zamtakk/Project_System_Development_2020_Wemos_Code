@@ -20,6 +20,9 @@
 
 #define DEVICE_TYPE "Door"
 
+#define INPUT_0 0b00000001
+#define INPUT_1 0b00000010
+
 // Global variables
 ESP8266WiFiMulti wifi;
 WebSocketsClient webSocket;
@@ -28,9 +31,12 @@ char UUID[11];
 
 bool websocketConnected = false;
 
-int LED1_value = 0;
-int LED2_value = 0;
-int Servo_value = 0;
+bool input0State = false;
+bool input1State = false;
+bool output0State = false;
+bool output1State = false;
+uint16_t analogInput0Value = 0;
+int Servo_value =0;
 
 // Forward Declaration
 
@@ -38,16 +44,17 @@ void initIO();
 void initWifi();
 void initWebsocket();
 
+void checkConnectionI2C();
+
 void websocketEvent(WStype_t type, uint8_t *payload, size_t length);
 
 void handleMessage(JsonObject message);
 void sendIntMessage(int command, int value);
 void sendStringMessage(int command, char *value);
 
-void handleButton1();
-void handleButton2();
-void handleLED1();
-void handleLED2();
+void handleDigitalInput();
+void handleAnalogInput();
+void handleDigitalOutput();
 void handleServo();
 
 void generateUUID();
@@ -66,17 +73,13 @@ void setup()
 
 void loop()
 {
+    handleDigitalInput();
+
+    handleAnalogInput();
+
+    handleDigitalOutput();
+
     webSocket.loop();
-
-    handleButton1();
-
-    handleButton2();
-
-    handleLED1();
-
-    handleLED2();
-
-    handleServo();
 }
 
 // Function definitions
@@ -85,10 +88,11 @@ void loop()
 */
 void initIO()
 {
-    Wire.begin();
     Serial.begin(115200);
     Serial.printf("\n\n\n");
-    pinMode(PIN_SERVO, OUTPUT);
+
+    Wire.begin();
+    checkConnectionI2C();
 }
 
 /*!
@@ -121,6 +125,25 @@ void initWebsocket()
 
     // try ever 5000 again if connection has failed
     webSocket.setReconnectInterval(2000);
+}
+
+/*!
+    @brief Update the I2C connection
+*/
+void checkConnectionI2C()
+{
+    //Config PCA9554
+    //IO0-IO3 as input, IO4-IO7 as output.
+    Wire.beginTransmission(0x38);
+    Wire.write(byte(0x03));
+    Wire.write(byte(0x0F));
+    Wire.endTransmission();
+
+    //Config MAX11647
+    Wire.beginTransmission(0x36);
+    Wire.write(byte(0xA2));
+    Wire.write(byte(0x03));
+    Wire.endTransmission();
 }
 
 /*!
@@ -180,28 +203,38 @@ void websocketEvent(WStype_t type, uint8_t *payload, size_t length)
 */
 void handleMessage(JsonObject message)
 {
-    switch ((DoorCommands)message["command"])
+    switch ((int)message["command"])
     {
-    case DOOR_LED1_CHANGE:
-        if ((int)message["value"] <= 1 && (int)message["value"] >= 0)
-        {
-            LED1_value = (int)message["value"];
-        }
+    case DEVICEINFO:
+    {
+        StaticJsonDocument<200> deviceInfoMessage;
+        char stringMessage[200];
+
+        deviceInfoMessage["UUID"] = UUID;
+        deviceInfoMessage["Type"] = DEVICE_TYPE;
+        deviceInfoMessage["command"] = DEVICEINFO;
+        deviceInfoMessage["ledStateInside"] = output0State;
+        deviceInfoMessage["ledStateOutside"] = output1State;
+        deviceInfoMessage["doorState"] = input0State;
+
+        serializeJson(deviceInfoMessage, stringMessage);
+
+        Serial.printf("Sending DEVICEINFO: %s\n", stringMessage);
+        webSocket.sendTXT(stringMessage);
         break;
+    }
+
+    case DOOR_LED1_CHANGE:
+    {
+        output0State = (bool)message["value"];
+        break;
+    }
 
     case DOOR_LED2_CHANGE:
-        if ((int)message["value"] <= 1 && (int)message["value"] >= 0)
-        {
-            LED2_value = (int)message["value"];
-        }
+    {
+        output1State = (bool)message["value"];
         break;
-
-    case DOOR_SERVO_CHANGE:
-        if ((int)message["value"] <= 1 && (int)message["value"] >= 0)
-        {
-            Servo_value = (int)message["value"];
-        }
-        break;
+    }
 
     default:
         Serial.printf("[Error] Unsupported command received: %d\n", (int)message["command"]);
@@ -273,76 +306,63 @@ void sendStringMessage(int command, char *value)
 }
 
 /*!
-    @brief Reads the push button and sends an update when changed
+    @brief Reads all the buttons and sends an update if something changed
 */
-void handleButton1()
+void handleDigitalInput()
 {
-    int button_State = 1;
-    static int button_PreviousState = 1;
+    checkConnectionI2C();
 
-    //TODO: change to work with I2C
-    //button_State = digitalRead(PIN_BUTTON);
+    uint8_t digitalIn = 0;
+    static bool input0State_Previous = false;
+    static bool input1State_Previous = false;
 
-    delay(50); // Simple debounce
+    Wire.beginTransmission(0x38);
+    Wire.write(byte(0x00));
+    Wire.endTransmission();
+    Wire.requestFrom(0x38, 1);
+    digitalIn = Wire.read();
 
-    if (button_State != button_PreviousState)
+    input0State = (digitalIn & INPUT_0);
+    input1State = (digitalIn & INPUT_1);
+
+    if (input0State != input0State_Previous)
     {
-        Serial.printf("Buttons state: %d\n", button_State);
-        button_PreviousState = button_State;
-        sendBoolMessage(DOOR_BUTTON1_CHANGE, !button_State);
+        Serial.printf("Switch state: %d\n", input0State);
+        input0State_Previous = input0State;
+        sendBoolMessage(DOOR_BUTTON1_CHANGE, input0State);
     }
-}
 
-/*!
-    @brief Reads the push button and sends an update when changed
-*/
-void handleButton2()
-{
-    int button_State = 1;
-    static int button_PreviousState = 1;
-
-    //TODO: change to work with I2C
-    //button_State = digitalRead(PIN_BUTTON);
-
-    delay(50); // Simple debounce
-
-    if (button_State != button_PreviousState)
+    if (input1State != input1State_Previous)
     {
-        Serial.printf("Buttons state: %d\n", button_State);
-        button_PreviousState = button_State;
-        sendBoolMessage(DOOR_BUTTON2_CHANGE, !button_State);
+        Serial.printf("Switch state: %d\n", input1State);
+        input1State_Previous = input1State;
+        sendBoolMessage(DOOR_BUTTON2_CHANGE, input1State);
     }
 }
 
 /*!
     @brief Checks if the LED state is still the same as the previous and updates the LED accordingly
 */
-void handleLED1()
+void handleDigitalOutput()
 {
-    static int LED_previous_value = 0;
+    checkConnectionI2C();
 
-    if (LED1_value != LED_previous_value)
+    uint8_t digitalOut = 0;
+    static uint8_t digitalOut_Previous = 0;
+
+    digitalOut += output0State << 4;
+    digitalOut += output1State << 5;
+
+    if (digitalOut != digitalOut_Previous)
     {
-        LED_previous_value = LED1_value;
-        //TODO: change to work with I2C
-        //digitalWrite(PIN_LED, LED_value);
-        Serial.printf("Led updated to %d!\n", LED1_value);
-    }
-}
+        digitalOut_Previous = digitalOut;
 
-/*!
-    @brief Checks if the LED state is still the same as the previous and updates the LED accordingly
-*/
-void handleLED2()
-{
-    static int LED_previous_value = 0;
+        Wire.beginTransmission(0x38);
+        Wire.write(byte(0x01));
+        Wire.write(byte(digitalOut));
+        Wire.endTransmission();
 
-    if (LED2_value != LED_previous_value)
-    {
-        LED_previous_value = LED2_value;
-        //TODO: change to work with I2C
-        //digitalWrite(PIN_LED, LED_value);
-        Serial.printf("Led updated to %d!\n", LED2_value);
+        Serial.printf("Outputs updated!\n");
     }
 }
 
