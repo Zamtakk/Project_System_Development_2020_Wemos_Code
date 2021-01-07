@@ -1,4 +1,4 @@
-#define CHAIR
+#define SIMULATED_DEVICE
 
 #ifdef CHAIR
 #include "DeviceChair.hpp"
