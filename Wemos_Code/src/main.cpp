@@ -1,15 +1,19 @@
-#define DOOR
+#define BED
 
 #ifdef CHAIR
-#include "DeviceChair.hpp"
+#include "Chair.hpp"
 #endif
 
 #ifdef SIMULATED_DEVICE
 #include "SimulatedDevice.hpp"
 #endif
 
+#ifdef BED
+#include "Bed.hpp"
+#endif
+
 #ifdef DOOR
-#include "DeviceDoor.hpp"
+#include "Door.hpp"
 #endif
 
 #ifdef WIB
