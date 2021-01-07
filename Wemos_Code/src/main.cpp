@@ -9,5 +9,5 @@
 #endif
 
 #ifdef BED
-#include "BedDevice.hpp"
+#include "DeviceBed.hpp"
 #endif
