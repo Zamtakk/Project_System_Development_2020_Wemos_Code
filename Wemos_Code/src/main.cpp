@@ -8,6 +8,6 @@
 #include "SimulatedDevice.hpp"
 #endif
 
-#ifdef SIMULATED_DEVICE
+#ifdef DOOR
 #include "DeviceDoor.hpp"
 #endif
