@@ -65,13 +65,13 @@ void setup()
 
 void loop()
 {
-    webSocket.loop();
-
     handleButtons();
 
     handlePotmeter();
 
     handleLEDs();
+
+    webSocket.loop();
 }
 
 // Function definitions
@@ -182,8 +182,26 @@ void websocketEvent(WStype_t type, uint8_t *payload, size_t length)
 */
 void handleMessage(JsonObject message)
 {
-    switch ((SimulatedDeviceCommands)message["command"])
+    switch ((int)message["command"])
     {
+    case DEVICEINFO:
+    {
+        StaticJsonDocument<200> deviceInfoMessage;
+        char stringMessage[200];
+
+        deviceInfoMessage["UUID"] = UUID;
+        deviceInfoMessage["Type"] = DEVICE_TYPE;
+        deviceInfoMessage["command"] = DEVICEINFO;
+        deviceInfoMessage["led1Value"] = LED_1_value;
+        deviceInfoMessage["led2Value"] = LED_2_value;
+        deviceInfoMessage["led3Value"] = LED_3_value;
+
+        serializeJson(deviceInfoMessage, stringMessage);
+
+        Serial.printf("Sending DEVICEINFO: %s\n", stringMessage);
+        webSocket.sendTXT(stringMessage);
+        break;
+    }
     case SIMULATED_LED1_CHANGE:
         if ((int)message["value"] <= 255 && (int)message["value"] >= 0)
         {
@@ -312,7 +330,8 @@ void handlePotmeter()
     int Potmeter_value = 0;
     static int Potmeter_previous_value = 0;
 
-    for(int i = 0; i < 10; i++){
+    for (int i = 0; i < 10; i++)
+    {
         Potmeter_value += analogRead(PIN_POTMETER);
     }
     Potmeter_value /= 10;
