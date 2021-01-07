@@ -199,25 +199,29 @@ void handleMessage(JsonObject message)
     switch ((int)message["command"])
     {
     case DEVICEINFO:
-        StaticJsonDocument<200> deviceInfo;
+    {
+        StaticJsonDocument<200> deviceInfoMessage;
         char stringMessage[200];
 
-        deviceInfo["UUID"] = UUID;
-        deviceInfo["Type"] = DEVICE_TYPE;
-        deviceInfo["command"] = DEVICEINFO;
-        deviceInfo["ledState"] = output0State;
-        deviceInfo["switchState"] = input0State;
-        deviceInfo["potValue"] = analogInput0Value;
+        deviceInfoMessage["UUID"] = UUID;
+        deviceInfoMessage["Type"] = DEVICE_TYPE;
+        deviceInfoMessage["command"] = DEVICEINFO;
+        deviceInfoMessage["ledState"] = output0State;
+        deviceInfoMessage["switchState"] = input0State;
+        deviceInfoMessage["potValue"] = analogInput0Value;
 
-        serializeJson(deviceInfo, stringMessage);
+        serializeJson(deviceInfoMessage, stringMessage);
 
         Serial.printf("Sending DEVICEINFO: %s\n", stringMessage);
         webSocket.sendTXT(stringMessage);
         break;
+    }
 
     case WIB_LED_CHANGE:
+    {
         output0State = (bool)message["value"];
         break;
+    }
 
     default:
         Serial.printf("[Error] Unsupported command received: %d\n", (int)message["command"]);
