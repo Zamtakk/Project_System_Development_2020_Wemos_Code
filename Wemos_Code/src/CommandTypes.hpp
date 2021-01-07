@@ -92,7 +92,7 @@ enum SimulatedDeviceCommands
 
 enum WibCommands
 {
-    WIB_BUTTON_CHANGE = 12000,
+    WIB_SWITCH_CHANGE = 12000,
     WIB_LED_CHANGE = 12001,
     WIB_POTMETER_CHANGE = 12002
 };
