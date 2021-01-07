@@ -13,14 +13,12 @@
 #include "CommandTypes.hpp"
 
 // Defines
-#define PIN_BUTTON 16 //D0
-#define PIN_FORCESENSOR A0
-#define PIN_LED 2 //D4
-
 #define I2C_SDL 5 //D1
 #define I2C_SDA 4 //D2
 
 #define DEVICE_TYPE "Bed"
+
+#define INPUT_0 0b00000001
 
 // Global variables
 ESP8266WiFiMulti wifi;
@@ -30,8 +28,9 @@ char UUID[11];
 
 bool websocketConnected = false;
 
-int LED_value = 0;
-int Vibrator_value = 0;
+bool input0State = false;
+bool output0State = false;
+uint16_t analogInput0Value = 0;
 
 // Forward Declaration
 
@@ -46,9 +45,9 @@ void sendIntMessage(int command, int value);
 void sendStringMessage(int command, char *value);
 void sendBoolMessage(int command, bool value);
 
-void handleButton();
-void handleForceSensor();
-void handleLED();
+void handleDigitalInput();
+void handleAnalogInput();
+void handleDigitalOutput();
 
 void generateUUID();
 
@@ -66,13 +65,13 @@ void setup()
 
 void loop()
 {
+    handleDigitalInput();
+
+    handleAnalogInput();
+
+    handleDigitalOutput();
+
     webSocket.loop();
-
-    handleButton();
-
-    handleForceSensor();
-
-    handleLED();
 }
 
 // Function definitions
@@ -81,9 +80,11 @@ void loop()
 */
 void initIO()
 {
-    Wire.begin();
     Serial.begin(115200);
     Serial.printf("\n\n\n");
+
+    Wire.begin();
+    checkConnectionI2C();
 }
 
 /*!
@@ -116,6 +117,25 @@ void initWebsocket()
 
     // try ever 5000 again if connection has failed
     webSocket.setReconnectInterval(2000);
+}
+
+/*!
+    @brief Update the I2C connection
+*/
+void checkConnectionI2C()
+{
+    //Config PCA9554
+    //IO0-IO3 as input, IO4-IO7 as output.
+    Wire.beginTransmission(0x38);
+    Wire.write(byte(0x03));
+    Wire.write(byte(0x0F));
+    Wire.endTransmission();
+
+    //Config MAX11647
+    Wire.beginTransmission(0x36);
+    Wire.write(byte(0xA2));
+    Wire.write(byte(0x03));
+    Wire.endTransmission();
 }
 
 /*!
@@ -178,10 +198,7 @@ void handleMessage(JsonObject message)
     switch ((BedCommands)message["command"])
     {
     case BED_LED_CHANGE:
-        if ((int)message["value"] <= 1 && (int)message["value"] >= 0)
-        {
-            LED_value = (int)message["value"];
-        }
+        output0State = (bool)message["value"];
         break;
 
     default:
@@ -254,55 +271,86 @@ void sendStringMessage(int command, char *value)
 }
 
 /*!
-    @brief Reads the push button and sends an update when changed
+    @brief Reads all the buttons and sends an update if something changed
 */
-void handleButton()
+void handleDigitalInput()
 {
-    int button_State = 1;
-    static int button_PreviousState = 1;
+    checkConnectionI2C();
 
-    button_State = digitalRead(PIN_BUTTON);
+    uint8_t digitalIn = 0;
+    static bool input0State_Previous = false;
 
-    delay(50); // Simple debounce
+    Wire.beginTransmission(0x38);
+    Wire.write(byte(0x00));
+    Wire.endTransmission();
+    Wire.requestFrom(0x38, 1);
+    digitalIn = Wire.read();
 
-    if (button_State != button_PreviousState)
+    input0State = (digitalIn & INPUT_0);
+
+    if (input0State != input0State_Previous)
     {
-        Serial.printf("Buttons state: %d\n", button_State);
-        button_PreviousState = button_State;
-        sendBoolMessage(BED_BUTTON_CHANGE, !button_State);
+        Serial.printf("Switch state: %d\n", input0State);
+        input0State_Previous = input0State;
+        sendBoolMessage(BED_BUTTON_CHANGE, input0State);
     }
 }
 
 /*!
-    @brief Reads the force sensor and sends an update if something changed
+    @brief Reads the potmeter and sends an update if something changed
 */
-void handleForceSensor()
+void handleAnalogInput()
 {
-    int ForceSensor_value = 0;
-    static int ForceSensor_previous_value = 0;
+    checkConnectionI2C();
 
-    ForceSensor_value = analogRead(PIN_FORCESENSOR);
+    uint16_t analog0In = 0;
+    uint16_t analog0In_avg = 0;
+    static uint16_t analog0In_Previous = 0;
 
-    if (ForceSensor_value % 8 < 5 && abs(ForceSensor_value - ForceSensor_previous_value) > 4)
+    for (int i = 0; i < 5; i++)
     {
-        ForceSensor_previous_value = ForceSensor_value;
-        Serial.printf("Force sensor value: %d\n", ForceSensor_value);
-        sendIntMessage(BED_FORCESENSOR_CHANGE, ForceSensor_value);
+        Wire.requestFrom(0x36, 4);
+        analog0In = (Wire.read() & 0x03) << 8;
+        analog0In += Wire.read();
+
+        analog0In_avg += analog0In;
+
+        delay(5);
+    }
+
+    analog0In_avg /= 5;
+    //TODO: check out actual values for force sensor (currently only works for potmeter)
+    if (abs(analog0In_avg - analog0In_Previous) > 8)
+    {
+        analog0In_Previous = analog0In_avg;
+        analogInput0Value = analog0In_avg / 1023.0 * 255.0;
+        Serial.printf("Potmeter value: %d\n", analogInput0Value);
+        sendIntMessage(BED_FORCESENSOR_CHANGE, analogInput0Value);
     }
 }
 
 /*!
     @brief Checks if the LED state is still the same as the previous and updates the LED accordingly
 */
-void handleLED()
+void handleDigitalOutput()
 {
-    static int LED_previous_value = 0;
+    checkConnectionI2C();
 
-    if (LED_value != LED_previous_value)
+    uint8_t digitalOut = 0;
+    static uint8_t digitalOut_Previous = 0;
+
+    digitalOut += output0State << 4;
+
+    if (digitalOut != digitalOut_Previous)
     {
-        LED_previous_value = LED_value;
-        digitalWrite(PIN_LED, LED_value);
-        Serial.printf("Led updated to %d!\n", LED_value);
+        digitalOut_Previous = digitalOut;
+
+        Wire.beginTransmission(0x38);
+        Wire.write(byte(0x01));
+        Wire.write(byte(digitalOut));
+        Wire.endTransmission();
+
+        Serial.printf("Outputs updated!\n");
     }
 }
 
