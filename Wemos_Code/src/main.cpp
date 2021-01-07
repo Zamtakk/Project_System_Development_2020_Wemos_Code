@@ -11,3 +11,7 @@
 #ifdef BED
 #include "DeviceBed.hpp"
 #endif
+
+#ifdef WIB
+#include "WIB.hpp"
+#endif
