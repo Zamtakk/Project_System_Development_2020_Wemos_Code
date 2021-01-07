@@ -326,25 +326,32 @@ void handleAnalogInput()
     uint16_t analog0In = 0;
     uint16_t analog0In_avg = 0;
     static uint16_t analog0In_Previous = 0;
+    uint16_t analog1In = 0;
+    uint16_t analog1In_avg = 0;
+    static uint16_t analog1In_Previous = 0;
 
     for (int i = 0; i < 5; i++)
     {
         Wire.requestFrom(0x36, 4);
         analog0In = (Wire.read() & 0x03) << 8;
         analog0In += Wire.read();
+        analog1In = (Wire.read() & 0x03) << 8;
+        analog1In += Wire.read();
 
         analog0In_avg += analog0In;
+        analog1In_avg += analog1In;
 
         delay(5);
     }
 
     analog0In_avg /= 5;
-    //TODO: check out actual values for force sensor (currently only works for potmeter)
+    analog1In_avg /= 5;
+
     if (abs(analog0In_avg - analog0In_Previous) > 8)
     {
         analog0In_Previous = analog0In_avg;
         analogInput0Value = analog0In_avg / 1023.0 * 255.0;
-        Serial.printf("Potmeter value: %d\n", analogInput0Value);
+        Serial.printf("Forcesensor value: %d\n", analogInput0Value);
         sendIntMessage(BED_FORCESENSOR_CHANGE, analogInput0Value);
     }
 }
