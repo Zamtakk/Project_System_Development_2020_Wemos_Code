@@ -36,7 +36,7 @@ bool input1State = false;
 bool output0State = false;
 bool output1State = false;
 uint16_t analogInput0Value = 0;
-int Servo_value = 0;
+int servo_value = 0;
 
 // Forward Declaration
 
@@ -371,12 +371,12 @@ void handleDigitalOutput()
 */
 void handleServo()
 {
-    static int Vibrator_previous_value = 0;
+    static int servo_Previous = 0;
 
-    if (Servo_value != Vibrator_previous_value)
+    if (servo_value != servo_Previous)
     {
-        Vibrator_previous_value = Servo_value;
-        if (Servo_value)
+        servo_Previous = servo_value;
+        if (servo_value)
         {
             analogWrite(PIN_SERVO, 90); //TODO: update when testing with real door
         }
@@ -384,7 +384,7 @@ void handleServo()
         {
             analogWrite(PIN_SERVO, 0); //TODO: update when testing with real door
         }
-        Serial.printf("Servo updated to %d!\n", Servo_value);
+        Serial.printf("Servo updated to %d!\n", servo_value);
     }
 }
 
