@@ -182,24 +182,24 @@ void websocketEvent(WStype_t type, uint8_t *payload, size_t length)
 */
 void handleMessage(JsonObject message)
 {
-    switch ((SimulatedDevice)message["command"])
+    switch ((SimulatedDeviceCommands)message["command"])
     {
-    case LED_1_CHANGE:
-        if ((int)message["value"] <= 1 && (int)message["value"] >= 0)
+    case SIMULATED_LED1_CHANGE:
+        if ((int)message["value"] <= 255 && (int)message["value"] >= 0)
         {
             LED_1_value = (int)message["value"];
         }
         break;
 
-    case LED_2_CHANGE:
-        if ((int)message["value"] <= 1 && (int)message["value"] >= 0)
+    case SIMULATED_LED2_CHANGE:
+        if ((int)message["value"] <= 255 && (int)message["value"] >= 0)
         {
             LED_2_value = (int)message["value"];
         }
         break;
 
-    case LED_3_CHANGE:
-        if ((int)message["value"] <= 1 && (int)message["value"] >= 0)
+    case SIMULATED_LED3_CHANGE:
+        if ((int)message["value"] <= 255 && (int)message["value"] >= 0)
         {
             LED_3_value = (int)message["value"];
         }
@@ -217,6 +217,27 @@ void handleMessage(JsonObject message)
     @param[in] value An integer value that is send with the command as parameter.
 */
 void sendIntMessage(int command, int value)
+{
+    StaticJsonDocument<200> message;
+    char stringMessage[200];
+
+    message["UUID"] = UUID;
+    message["Type"] = DEVICE_TYPE;
+    message["command"] = command;
+    message["value"] = value;
+
+    serializeJson(message, stringMessage);
+
+    Serial.printf("Sending message: %s\n", stringMessage);
+    webSocket.sendTXT(stringMessage);
+}
+
+/*!
+    @brief Sends a new message over the Websocket connection with an bool as JSON value
+    @param[in] command The command send in the JSON packet, see CommandTypes.hpp
+    @param[in] value A boolean value that is send with the command as parameter.
+*/
+void sendBoolMessage(int command, bool value)
 {
     StaticJsonDocument<200> message;
     char stringMessage[200];
@@ -272,14 +293,14 @@ void handleButtons()
     {
         Serial.printf("Buttons 1 state: %d\n", button_1_State);
         button_1_PreviousState = button_1_State;
-        sendIntMessage(BUTTON_1_CHANGE, !button_1_State);
+        sendBoolMessage(SIMULATED_BUTTON1_CHANGE, !button_1_State);
     }
 
     if (button_2_State != button_2_PreviousState)
     {
         Serial.printf("Buttons 2 state: %d\n", button_2_State);
         button_2_PreviousState = button_2_State;
-        sendIntMessage(BUTTON_2_CHANGE, !button_2_State);
+        sendBoolMessage(SIMULATED_BUTTON2_CHANGE, !button_2_State);
     }
 }
 
@@ -291,13 +312,17 @@ void handlePotmeter()
     int Potmeter_value = 0;
     static int Potmeter_previous_value = 0;
 
-    Potmeter_value = analogRead(PIN_POTMETER);
+    for(int i = 0; i < 10; i++){
+        Potmeter_value += analogRead(PIN_POTMETER);
+    }
+    Potmeter_value /= 10;
 
-    if (Potmeter_value % 8 < 5 && abs(Potmeter_value - Potmeter_previous_value) > 4)
+    if (abs(Potmeter_value - Potmeter_previous_value) > 8)
     {
         Potmeter_previous_value = Potmeter_value;
+        Potmeter_value = Potmeter_value / 1023.0 * 255.0;
         Serial.printf("Potmeter value: %d\n", Potmeter_value);
-        sendIntMessage(POTMETER_CHANGE, Potmeter_value);
+        sendIntMessage(SIMULATED_POTMETER_CHANGE, Potmeter_value);
     }
 }
 
@@ -313,21 +338,21 @@ void handleLEDs()
     if (LED_1_value != LED_1_previous_value)
     {
         LED_1_previous_value = LED_1_value;
-        digitalWrite(PIN_LED_1, LED_1_value);
+        analogWrite(PIN_LED_1, LED_1_value);
         Serial.printf("Led 1 updated to %d!\n", LED_1_value);
     }
 
     if (LED_2_value != LED_2_previous_value)
     {
         LED_2_previous_value = LED_2_value;
-        digitalWrite(PIN_LED_2, LED_2_value);
+        analogWrite(PIN_LED_2, LED_2_value);
         Serial.printf("Led 2 updated to %d!\n", LED_2_value);
     }
 
     if (LED_3_value != LED_3_previous_value)
     {
         LED_3_previous_value = LED_3_value;
-        digitalWrite(PIN_LED_3, LED_3_value);
+        analogWrite(PIN_LED_3, LED_3_value);
         Serial.printf("Led 3 updated to %d!\n", LED_3_value);
     }
 }
