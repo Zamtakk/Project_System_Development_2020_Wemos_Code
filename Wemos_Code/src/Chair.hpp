@@ -374,7 +374,7 @@ void handleDigitalOutput()
     checkConnectionI2C();
 
     uint8_t digitalOut = 0;
-    static uint8_t digitalOut_Previous = 0;
+    static uint8_t digitalOut_Previous = 1;
 
     digitalOut += output0State << 4;
     digitalOut += output1State << 5;
