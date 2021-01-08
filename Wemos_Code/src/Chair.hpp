@@ -338,9 +338,8 @@ void handleAnalogInput()
     static uint16_t analog0In_Previous = 0;
     uint16_t analog1In = 0;
     uint16_t analog1In_avg = 0;
-    static uint16_t analog1In_Previous = 0;
 
-    for (int i = 0; i < 5; i++)
+    for (int i = 0; i < 10; i++)
     {
         Wire.requestFrom(0x36, 4);
         analog0In = (Wire.read() & 0x03) << 8;
@@ -350,14 +349,12 @@ void handleAnalogInput()
 
         analog0In_avg += analog0In;
         analog1In_avg += analog1In;
-
-        delay(5);
     }
 
-    analog0In_avg /= 5;
-    analog1In_avg /= 5;
+    analog0In_avg /= 10;
+    analog1In_avg /= 10;
 
-    if (abs(analog0In_avg - analog0In_Previous) > 8)
+    if (abs(analog0In_avg - analog0In_Previous) > 20)
     {
         analog0In_Previous = analog0In_avg;
         analogInput0Value = analog0In_avg / 1023.0 * 255.0;
