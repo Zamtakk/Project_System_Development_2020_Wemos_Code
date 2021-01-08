@@ -336,7 +336,7 @@ void handlePotmeter()
     }
     Potmeter_value /= 10;
 
-    if (abs(Potmeter_value - Potmeter_previous_value) > 8)
+    if (abs(Potmeter_value - Potmeter_previous_value) > 20)
     {
         Potmeter_previous_value = Potmeter_value;
         Potmeter_value = Potmeter_value / 1023.0 * 255.0;
