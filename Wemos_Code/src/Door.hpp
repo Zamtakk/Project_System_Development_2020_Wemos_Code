@@ -389,21 +389,14 @@ void handleServo()
         doorOpen_Previous = doorOpen;
         if (doorOpen)
         {
-            for (servoValue = 0; servoValue < 90; servoValue += 1)
-            {
-                doorServo.write(servoValue);
-                delay(5);
-            }
+            doorServo.write(0);
+            Serial.printf("Door opened to 0 degrees!\n");
         }
         else
         {
-            for (servoValue = 90; servoValue >= 0; servoValue -= 1)
-            {
-                doorServo.write(servoValue);
-                delay(5);
-            }
+            doorServo.write(83);
+            Serial.printf("Door closed to 83 degrees!\n");
         }
-        Serial.printf("Servo updated to %d!\n", servoValue);
     }
 }
 
