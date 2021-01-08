@@ -1,4 +1,4 @@
-#define BED
+#define CHAIR
 
 #ifdef CHAIR
 #include "Chair.hpp"
