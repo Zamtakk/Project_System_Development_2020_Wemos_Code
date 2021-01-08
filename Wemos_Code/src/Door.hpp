@@ -380,6 +380,8 @@ void handleDigitalOutput()
 */
 void handleServo()
 {
+    checkConnectionI2C();
+
     static bool doorOpen_Previous = false;
 
     if (doorOpen != doorOpen_Previous)
@@ -395,7 +397,7 @@ void handleServo()
         }
         else
         {
-            for (servoValue = 90; servoValue >= 0; servoValue -= 5)
+            for (servoValue = 90; servoValue >= 0; servoValue -= 1)
             {
                 doorServo.write(servoValue);
                 delay(5);
