@@ -9,6 +9,7 @@
 #include <math.h>
 #include <EEPROM.h>
 #include <Wire.h>
+#include <Servo.h>
 
 #include "CommandTypes.hpp"
 
@@ -26,6 +27,7 @@
 // Global variables
 ESP8266WiFiMulti wifi;
 WebSocketsClient webSocket;
+Servo doorServo;
 
 char UUID[11];
 
@@ -35,7 +37,7 @@ bool input0State = false;
 bool input1State = false;
 bool output0State = false;
 bool output1State = false;
-uint16_t analogInput0Value = 0;
+bool doorOpen = false;
 int servoValue = 0;
 
 // Forward Declaration
@@ -53,7 +55,6 @@ void sendIntMessage(int command, int value);
 void sendStringMessage(int command, char *value);
 
 void handleDigitalInput();
-void handleAnalogInput();
 void handleDigitalOutput();
 void handleServo();
 
@@ -75,9 +76,9 @@ void loop()
 {
     handleDigitalInput();
 
-    handleAnalogInput();
-
     handleDigitalOutput();
+
+    handleServo();
 
     webSocket.loop();
 }
@@ -91,6 +92,8 @@ void initIO()
     Serial.begin(115200);
     Serial.printf("\n\n\n");
 
+    doorServo.attach(PIN_SERVO);
+    
     Wire.begin();
     checkConnectionI2C();
 }
@@ -215,7 +218,7 @@ void handleMessage(JsonObject message)
         deviceInfoMessage["command"] = DEVICEINFO;
         deviceInfoMessage["ledStateInside"] = output0State;
         deviceInfoMessage["ledStateOutside"] = output1State;
-        deviceInfoMessage["doorOpen"] = input0State;
+        deviceInfoMessage["doorOpen"] = doorOpen;
 
         serializeJson(deviceInfoMessage, stringMessage);
 
@@ -233,6 +236,12 @@ void handleMessage(JsonObject message)
     case DOOR_LED2_CHANGE:
     {
         output1State = (bool)message["value"];
+        break;
+    }
+
+    case DOOR_SERVO_CHANGE:
+    {
+        doorOpen = (bool)message["value"];
         break;
     }
 
@@ -371,20 +380,23 @@ void handleDigitalOutput()
 */
 void handleServo()
 {
-    static int servo_Previous = 0;
+    checkConnectionI2C();
 
-    if (servoValue != servo_Previous)
+    static bool doorOpen_Previous = true;
+
+    if (doorOpen != doorOpen_Previous)
     {
-        servo_Previous = servoValue;
-        if (servoValue)
+        doorOpen_Previous = doorOpen;
+        if (doorOpen)
         {
-            analogWrite(PIN_SERVO, 90); //TODO: update when testing with real door
+            doorServo.write(0);
+            Serial.printf("Door opened to 0 degrees!\n");
         }
         else
         {
-            analogWrite(PIN_SERVO, 0); //TODO: update when testing with real door
+            doorServo.write(83);
+            Serial.printf("Door closed to 83 degrees!\n");
         }
-        Serial.printf("Servo updated to %d!\n", servoValue);
     }
 }
 
