@@ -38,6 +38,8 @@ void initIO();
 void initWifi();
 void initWebsocket();
 
+void checkConnectionI2C();
+
 void websocketEvent(WStype_t type, uint8_t *payload, size_t length);
 
 void handleMessage(JsonObject message);
@@ -364,7 +366,7 @@ void handleDigitalOutput()
     checkConnectionI2C();
 
     uint8_t digitalOut = 0;
-    static uint8_t digitalOut_Previous = 0;
+    static uint8_t digitalOut_Previous = 1;
 
     digitalOut += output0State << 4;
 
