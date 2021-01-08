@@ -385,7 +385,7 @@ void handleDigitalOutput()
         Wire.write(byte(digitalOut));
         Wire.endTransmission();
 
-        Serial.printf("Outputs updated!\n", digitalOut);
+        Serial.printf("Outputs updated!\n");
     }
 }
 
