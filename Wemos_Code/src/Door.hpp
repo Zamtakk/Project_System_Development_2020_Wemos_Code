@@ -382,7 +382,7 @@ void handleServo()
 {
     checkConnectionI2C();
 
-    static bool doorOpen_Previous = false;
+    static bool doorOpen_Previous = true;
 
     if (doorOpen != doorOpen_Previous)
     {
