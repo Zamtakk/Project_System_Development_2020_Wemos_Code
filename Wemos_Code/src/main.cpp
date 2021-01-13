@@ -1,4 +1,4 @@
-#define DOOR
+#define COLUMN
 
 #ifdef CHAIR
 #include "Chair.hpp"
@@ -18,4 +18,8 @@
 
 #ifdef WIB
 #include "WIB.hpp"
+#endif
+
+#ifdef COLUMN
+#include "Column.hpp"
 #endif
