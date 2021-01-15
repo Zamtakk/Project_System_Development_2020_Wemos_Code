@@ -246,7 +246,6 @@ void handleMessage(JsonObject message)
     case FRIDGE_FAN_CHANGE:
     {
         output0State = (bool)message["value"];
-        Serial.printf("New fan value %d %d", output0State, (bool)message["value"]);
         break;
     }
 
