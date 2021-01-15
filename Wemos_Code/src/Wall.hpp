@@ -9,6 +9,7 @@
 #include <math.h>
 #include <EEPROM.h>
 #include <Wire.h>
+#include <FastLED.h>
 
 #include "CommandTypes.hpp"
 
@@ -17,6 +18,7 @@
 #define I2C_SDA 4 //D2
 
 #define PIN_LEDSTRIP 14 //D5
+#define NUM_LEDS 3
 
 #define DEVICE_TYPE "Wall"
 
@@ -34,6 +36,8 @@ bool output0State = false;
 uint16_t analogInput0Value = 0;
 uint16_t analogInput1Value = 0;
 int ledValue = 0;
+
+CRGB leds[NUM_LEDS];
 
 // Forward Declaration
 
@@ -389,7 +393,11 @@ void handleLedstrip()
     if (ledValue != LED_previous_value)
     {
         LED_previous_value = ledValue;
-        analogWrite(PIN_LEDSTRIP, ledValue);
+        for (int i = 0; i < NUM_LEDS; i++)
+        {
+            leds[i] = CRGB(ledValue, ledValue, ledValue);
+            FastLED.show();
+        }
         Serial.printf("Ledstrip updated to %d!\n", ledValue);
     }
 }
