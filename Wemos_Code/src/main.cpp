@@ -19,3 +19,7 @@
 #ifdef WIB
 #include "WIB.hpp"
 #endif
+
+#ifdef FRIDGE
+#include "Fridge.hpp"
+#endif
