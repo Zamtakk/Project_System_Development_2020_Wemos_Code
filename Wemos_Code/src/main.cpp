@@ -1,4 +1,4 @@
-#define LAMP
+#define DOOR
 
 #ifdef CHAIR
 #include "Chair.hpp"
@@ -22,4 +22,8 @@
 
 #ifdef LAMP
 #include "Lamp.hpp"
+#endif
+
+#ifdef FRIDGE
+#include "Fridge.hpp"
 #endif
