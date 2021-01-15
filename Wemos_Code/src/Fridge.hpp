@@ -39,9 +39,11 @@ bool websocketConnected = false;
 
 uint16_t analogInput0Value = 0;
 uint16_t analogInput1Value = 0;
+int temperatureInside = 0;
+int temperatureOutside = 0;
 bool input0State = false;
 bool output0State = false;
-bool doorState = false;
+bool doorOpen = false;
 bool tecState = false;
 
 // Forward Declaration
@@ -228,9 +230,9 @@ void handleMessage(JsonObject message)
         deviceInfoMessage["UUID"] = UUID;
         deviceInfoMessage["Type"] = DEVICE_TYPE;
         deviceInfoMessage["command"] = DEVICEINFO;
-        deviceInfoMessage["temperatureValueInside"] = analogInput0Value;
-        deviceInfoMessage["temperatureValueOutsie"] = analogInput1Value;
-        deviceInfoMessage["doorState"] = input0State;
+        deviceInfoMessage["temperatureValueInside"] = temperatureInside;
+        deviceInfoMessage["temperatureValueOutsie"] = temperatureOutside;
+        deviceInfoMessage["doorOpen"] = input0State;
         deviceInfoMessage["tecState"] = tecState;
         deviceInfoMessage["fanState"] = output0State;
 
@@ -417,6 +419,7 @@ void handleAnalogInput()
         analogInput0Value = analog0In_avg;
         float resistance = adc_to_resistance((float)analogInput0Value);
         float temperature = resistance_to_celcius((float)resistance, THERMISTOR_NOMINAL);
+        temperatureInside = (int)temperature;
         Serial.printf("Temperature value inside: %d\n", (int)temperature);
         sendIntMessage(FRIDGE_TEMPERATURESENSORINSIDE_CHANGE, (int)temperature);
     }
@@ -426,10 +429,10 @@ void handleAnalogInput()
         analogInput1Value = analog1In_avg;
         float resistance = adc_to_resistance((float)analogInput1Value);
         float temperature = resistance_to_celcius((float)resistance, THERMISTOR_NOMINAL);
+        temperatureOutside = (int)temperature;
         Serial.printf("Temperature value outside: %d\n", (int)temperature);
         sendIntMessage(FRIDGE_TEMPERATURESENSOROUTSIDE_CHANGE, (int)temperature);
     }
-    delay(250);
 }
 
 /*!
