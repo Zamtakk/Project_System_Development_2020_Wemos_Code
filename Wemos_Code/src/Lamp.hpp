@@ -220,9 +220,9 @@ void handleMessage(JsonObject message)
         break;
     }
 
-    case LAMP_LED_CHANGE:
+    case LAMP_LED_DIMMER_CHANGE:
     {
-        ledValue = (bool)message["value"];
+        ledValue = (int)message["value"];
         break;
     }
 
