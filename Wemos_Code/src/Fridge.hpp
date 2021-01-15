@@ -24,6 +24,11 @@
 
 #define HEARTBEAT_INTERVAL 500
 
+#define THERMISTOR_NOMINAL 10000
+#define NOMINAL_TEMPERATURE 25
+#define TEMP_CALC_B_COEFFICIENT 3435
+#define TEMP_CALC_SERIES_RESISTOR 10000
+
 // Global variables
 ESP8266WiFiMulti wifi;
 WebSocketsClient webSocket;
@@ -59,6 +64,9 @@ void handleAnalogInput();
 void handleTec();
 
 void sendHeartbeat();
+
+float resistance_to_celcius(float p_resistance, uint16_t p_nominal);
+float adc_to_resistance(float p_adc);
 
 void generateUUID();
 
@@ -403,20 +411,25 @@ void handleAnalogInput()
     analog0In_avg /= 5;
     analog1In_avg /= 5;
 
-    if (abs(analog0In_avg - analog0In_Previous) > 8)
+    if (abs(analog0In_avg - analog0In_Previous) > 3)
     {
         analog0In_Previous = analog0In_avg;
-        analogInput0Value = analog0In_avg / 1023.0 * 255.0;
-        Serial.printf("Forcesensor value: %d\n", analogInput0Value);
-        sendIntMessage(FRIDGE_TEMPERATURESENSORINSIDE_CHANGE, analogInput0Value);
+        analogInput0Value = analog0In_avg;
+        float resistance = adc_to_resistance((float)analogInput0Value);
+        float temperature = resistance_to_celcius((float)resistance, THERMISTOR_NOMINAL);
+        Serial.printf("Temperature value inside: %d\n", (int)temperature);
+        sendIntMessage(FRIDGE_TEMPERATURESENSORINSIDE_CHANGE, (int)temperature);
     }
-    if (abs(analog1In_avg - analog1In_Previous) > 8)
+    if (abs(analog1In_avg - analog1In_Previous) > 3)
     {
         analog1In_Previous = analog1In_avg;
-        analogInput1Value = analog1In_avg / 1023.0 * 255.0;
-        Serial.printf("Forcesensor value: %d\n", analogInput1Value);
-        sendIntMessage(FRIDGE_TEMPERATURESENSOROUTSIDE_CHANGE, analogInput1Value);
+        analogInput1Value = analog1In_avg;
+        float resistance = adc_to_resistance((float)analogInput1Value);
+        float temperature = resistance_to_celcius((float)resistance, THERMISTOR_NOMINAL);
+        Serial.printf("Temperature value outside: %d\n", (int)temperature);
+        sendIntMessage(FRIDGE_TEMPERATURESENSOROUTSIDE_CHANGE, (int)temperature);
     }
+    delay(250);
 }
 
 /*!
@@ -505,4 +518,25 @@ void generateUUID()
 
     EEPROM.put(addr, data);
     EEPROM.commit();
+}
+
+float adc_to_resistance(float p_adc)
+{
+    p_adc = 1023 - p_adc;
+    p_adc += p_adc - 512;
+    p_adc = 1023 / p_adc - 1;
+    p_adc = TEMP_CALC_SERIES_RESISTOR / p_adc;
+    return p_adc;
+}
+
+float resistance_to_celcius(float p_resistance, uint16_t p_nominal)
+{
+    float steinhart;
+    steinhart = p_resistance / p_nominal;              // (R/Ro)
+    steinhart = log(steinhart);                        // ln(R/Ro)
+    steinhart /= TEMP_CALC_B_COEFFICIENT;              // 1/B * ln(R/Ro)
+    steinhart += 1.0 / (NOMINAL_TEMPERATURE + 273.15); // + (1/To)
+    steinhart = 1.0 / steinhart;                       // Invert
+    steinhart -= 273.15;                               // convert to C
+    return steinhart;
 }
