@@ -20,6 +20,8 @@
 
 #define DEVICE_TYPE "Wall"
 
+#define HEARTBEAT_INTERVAL 500
+
 // Global variables
 ESP8266WiFiMulti wifi;
 WebSocketsClient webSocket;
@@ -52,6 +54,8 @@ void handleAnalogInput();
 void handleDigitalOutput();
 void handleLedstrip();
 
+void sendHeartbeat();
+
 void generateUUID();
 
 // Setup
@@ -73,6 +77,8 @@ void loop()
     handleDigitalOutput();
 
     handleLedstrip();
+
+    sendHeartbeat();
 
     webSocket.loop();
 }
@@ -385,6 +391,32 @@ void handleLedstrip()
         LED_previous_value = ledValue;
         analogWrite(PIN_LEDSTRIP, ledValue);
         Serial.printf("Ledstrip updated to %d!\n", ledValue);
+    }
+}
+
+/*!
+    @brief Check if the heartbeat interval time has passed and then send a heartbeat
+*/
+void sendHeartbeat()
+{
+    static uint32_t lastTime = 0;
+
+    if ((millis() - lastTime) > HEARTBEAT_INTERVAL)
+    {
+        lastTime = millis();
+        if (websocketConnected)
+        {
+            StaticJsonDocument<200> message;
+            char stringMessage[200];
+
+            message["UUID"] = UUID;
+            message["Type"] = DEVICE_TYPE;
+            message["command"] = HEARTBEAT;
+
+            serializeJson(message, stringMessage);
+
+            webSocket.sendTXT(stringMessage);
+        }
     }
 }
 
