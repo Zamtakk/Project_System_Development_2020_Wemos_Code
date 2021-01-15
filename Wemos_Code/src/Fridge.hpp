@@ -232,7 +232,7 @@ void handleMessage(JsonObject message)
         deviceInfoMessage["command"] = DEVICEINFO;
         deviceInfoMessage["temperatureValueInside"] = temperatureInside;
         deviceInfoMessage["temperatureValueOutside"] = temperatureOutside;
-        deviceInfoMessage["doorOpen"] = input0State;
+        deviceInfoMessage["doorOpen"] = !input0State;
         deviceInfoMessage["tecState"] = tecState;
         deviceInfoMessage["fanState"] = output0State;
 
@@ -246,18 +246,13 @@ void handleMessage(JsonObject message)
     case FRIDGE_FAN_CHANGE:
     {
         output0State = (bool)message["value"];
+        Serial.printf("New fan value %d %d", output0State, (bool)message["value"]);
         break;
     }
 
     case FRIDGE_TEC_CHANGE:
     {
         tecState = (bool)message["value"];
-        break;
-    }
-
-    case FRIDGE_SWITCH_CHANGE:
-    {
-        input0State = (bool)message["value"];
         break;
     }
 
@@ -339,7 +334,6 @@ void handleDigitalInput()
 
     uint8_t digitalIn = 0;
     static bool input0State_Previous = false;
-    static bool input1State_Previous = false;
 
     Wire.beginTransmission(0x38);
     Wire.write(byte(0x00));
@@ -353,7 +347,7 @@ void handleDigitalInput()
     {
         Serial.printf("Switch state: %d\n", input0State);
         input0State_Previous = input0State;
-        sendBoolMessage(FRIDGE_SWITCH_CHANGE, input0State);
+        sendBoolMessage(FRIDGE_SWITCH_CHANGE, !input0State);
     }
 }
 
@@ -365,7 +359,7 @@ void handleDigitalOutput()
     checkConnectionI2C();
 
     uint8_t digitalOut = 0;
-    static uint8_t digitalOut_Previous = 0;
+    static uint8_t digitalOut_Previous = 255;
 
     digitalOut += output0State << 4;
 
@@ -431,7 +425,7 @@ void handleAnalogInput()
         float temperature = resistance_to_celcius((float)resistance, THERMISTOR_NOMINAL);
         temperatureOutside = (int)temperature;
         Serial.printf("Temperature value outside: %d\n", (int)temperature);
-        sendIntMessage(FRIDGE_TEMPERATURESENSOROUTSIDE_CHANGE, (int)temperature);
+        //sendIntMessage(FRIDGE_TEMPERATURESENSOROUTSIDE_CHANGE, (int)temperature);
     }
 }
 
@@ -442,12 +436,12 @@ void handleTec()
 {
     checkConnectionI2C();
 
-    static bool tec_Previous = true;
+    static bool tec_Previous = NULL;
 
     if (tecState != tec_Previous)
     {
         tec_Previous = tecState;
-        analogWrite(PIN_TEC, tecState);
+        digitalWrite(PIN_TEC, tecState);
         Serial.printf("Tec changed to %d!\n", tecState);
     }
 }
