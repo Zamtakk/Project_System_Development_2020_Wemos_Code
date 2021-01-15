@@ -231,7 +231,7 @@ void handleMessage(JsonObject message)
         deviceInfoMessage["Type"] = DEVICE_TYPE;
         deviceInfoMessage["command"] = DEVICEINFO;
         deviceInfoMessage["temperatureValueInside"] = temperatureInside;
-        deviceInfoMessage["temperatureValueOutsie"] = temperatureOutside;
+        deviceInfoMessage["temperatureValueOutside"] = temperatureOutside;
         deviceInfoMessage["doorOpen"] = input0State;
         deviceInfoMessage["tecState"] = tecState;
         deviceInfoMessage["fanState"] = output0State;
