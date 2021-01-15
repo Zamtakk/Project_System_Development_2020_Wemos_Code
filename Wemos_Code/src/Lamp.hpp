@@ -9,6 +9,7 @@
 #include <math.h>
 #include <EEPROM.h>
 #include <Wire.h>
+#include <FastLED.h>
 
 #include "CommandTypes.hpp"
 
@@ -17,6 +18,7 @@
 #define I2C_SDA 4 //D2
 
 #define PIN_LED 14 //D5
+#define NUM_LEDS 1
 
 #define DEVICE_TYPE "Lamp"
 
@@ -34,6 +36,8 @@ bool websocketConnected = false;
 
 bool input0State = false;
 int ledValue = 0;
+
+CRGB leds[NUM_LEDS];
 
 // Forward Declaration
 
@@ -87,6 +91,8 @@ void initIO()
 {
     Serial.begin(115200);
     Serial.printf("\n\n\n");
+
+    FastLED.addLeds<WS2812, PIN_LED, GRB>(leds, NUM_LEDS);
 
     Wire.begin();
     checkConnectionI2C();
@@ -333,7 +339,8 @@ void handleLed()
     if (ledValue != LED_previous_value)
     {
         LED_previous_value = ledValue;
-        analogWrite(PIN_LED, ledValue);
+        leds[0] = CRGB(ledValue, ledValue, ledValue);
+        FastLED.show();
         Serial.printf("Lamp updated to %d!\n", ledValue);
     }
 }
