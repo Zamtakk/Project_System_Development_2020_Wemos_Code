@@ -24,6 +24,8 @@
 #define INPUT_0 0b00000001
 #define INPUT_1 0b00000010
 
+#define HEARTBEAT_INTERVAL 500
+
 // Global variables
 ESP8266WiFiMulti wifi;
 WebSocketsClient webSocket;
@@ -58,6 +60,8 @@ void handleDigitalInput();
 void handleDigitalOutput();
 void handleServo();
 
+void sendHeartbeat();
+
 void generateUUID();
 
 // Setup
@@ -79,6 +83,8 @@ void loop()
     handleDigitalOutput();
 
     handleServo();
+
+    sendHeartbeat();
 
     webSocket.loop();
 }
@@ -396,6 +402,31 @@ void handleServo()
         {
             doorServo.write(83);
             Serial.printf("Door closed to 83 degrees!\n");
+        }
+    }
+}
+
+/*!
+    @brief Check if the heartbeat interval time has passed and then send a heartbeat
+*/
+void sendHeartbeat()
+{
+    static uint32_t lastTime = 0;
+
+    if ((millis() - lastTime) > HEARTBEAT_INTERVAL)
+    {
+        lastTime = millis();
+        if(websocketConnected){
+            StaticJsonDocument<200> message;
+            char stringMessage[200];
+
+            message["UUID"] = UUID;
+            message["Type"] = DEVICE_TYPE;
+            message["command"] = HEARTBEAT;
+
+            serializeJson(message, stringMessage);
+
+            webSocket.sendTXT(stringMessage);
         }
     }
 }
