@@ -446,7 +446,8 @@ void sendHeartbeat()
     if ((millis() - lastTime) > HEARTBEAT_INTERVAL)
     {
         lastTime = millis();
-        if(websocketConnected){
+        if (websocketConnected)
+        {
             StaticJsonDocument<200> message;
             char stringMessage[200];
 
