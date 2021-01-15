@@ -23,3 +23,11 @@
 #ifdef WALL
 #include "Wall.hpp"
 #endif
+
+#ifdef LAMP
+#include "Lamp.hpp"
+#endif
+
+#ifdef FRIDGE
+#include "Fridge.hpp"
+#endif
