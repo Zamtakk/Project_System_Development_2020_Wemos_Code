@@ -63,7 +63,8 @@ enum BedCommands
 enum LampCommands
 {
     LAMP_MOVEMENTSENSOR_CHANGE = 8000,
-    LAMP_LED_CHANGE = 8001
+    LAMP_LED_DIMMER_CHANGE = 8001,
+    LAMP_LED_ONOFF_CHANGE = 8002
 };
 
 enum DoorCommands
