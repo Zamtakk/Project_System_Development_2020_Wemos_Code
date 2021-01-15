@@ -21,6 +21,8 @@
 
 #define DEVICE_TYPE "SimulatedDevice"
 
+#define HEARTBEAT_INTERVAL 500
+
 // Global variables
 ESP8266WiFiMulti wifi;
 WebSocketsClient webSocket;
@@ -49,6 +51,8 @@ void handleButtons();
 void handlePotmeter();
 void handleLEDs();
 
+void sendHeartbeat();
+
 void generateUUID();
 
 // Setup
@@ -70,6 +74,8 @@ void loop()
     handlePotmeter();
 
     handleLEDs();
+
+    sendHeartbeat();
 
     webSocket.loop();
 }
@@ -373,6 +379,31 @@ void handleLEDs()
         LED_3_previous_value = LED_3_value;
         analogWrite(PIN_LED_3, LED_3_value);
         Serial.printf("Led 3 updated to %d!\n", LED_3_value);
+    }
+}
+
+/*!
+    @brief Check if the heartbeat interval time has passed and then send a heartbeat
+*/
+void sendHeartbeat()
+{
+    static uint32_t lastTime = 0;
+
+    if ((millis() - lastTime) > HEARTBEAT_INTERVAL)
+    {
+        lastTime = millis();
+        if(websocketConnected){
+            StaticJsonDocument<200> message;
+            char stringMessage[200];
+
+            message["UUID"] = UUID;
+            message["Type"] = DEVICE_TYPE;
+            message["command"] = HEARTBEAT;
+
+            serializeJson(message, stringMessage);
+
+            webSocket.sendTXT(stringMessage);
+        }
     }
 }
 
