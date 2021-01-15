@@ -1,4 +1,4 @@
-#define FRIDGE
+#define DOOR
 
 #ifdef CHAIR
 #include "Chair.hpp"
