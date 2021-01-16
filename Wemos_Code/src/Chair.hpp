@@ -9,10 +9,10 @@ const char DEVICE_TYPE[] = "Chair";
 
 // Global variables
 
-bool input0State = false;
-bool output0State = false;
-bool output1State = false;
-uint16_t analogInput0Value = 0;
+bool buttonPressed = false;
+bool ledOn = false;
+bool vibratorOn = false;
+uint16_t pressureValue = 0;
 
 // Forward Declaration
 
@@ -37,11 +37,11 @@ void setup()
 
 void loop()
 {
-    updateDigitalI2CInputs(&input0State, CHAIR_BUTTON_CHANGE);
+    updateDigitalI2CInputs(&buttonPressed, CHAIR_BUTTON_PRESSED);
 
-    updateAnalogI2CInputs(10, 20, 255, &analogInput0Value, CHAIR_FORCESENSOR_CHANGE);
+    updateAnalogI2CInputs(10, 20, 255, &pressureValue, CHAIR_PRESSURE_SENSOR_VALUE);
 
-    updateDigitalI2COutputs(&output0State, &output1State);
+    updateDigitalI2COutputs(&ledOn, &vibratorOn);
 
     sendHeartbeat();
 
@@ -57,34 +57,34 @@ void handleMessage(JsonObject message)
 {
     switch ((int)message["command"])
     {
-    case DEVICEINFO:
+    case DEVICE_INFO:
     {
         StaticJsonDocument<200> deviceInfoMessage;
         char stringMessage[200];
 
         deviceInfoMessage["UUID"] = UUID;
         deviceInfoMessage["Type"] = DEVICE_TYPE;
-        deviceInfoMessage["command"] = DEVICEINFO;
-        deviceInfoMessage["ledState"] = output0State;
-        deviceInfoMessage["vibratorState"] = output1State;
-        deviceInfoMessage["pressureValue"] = analogInput0Value;
+        deviceInfoMessage["command"] = DEVICE_INFO;
+        deviceInfoMessage["CHAIR_LED_ON"] = ledOn;
+        deviceInfoMessage["CHAIR_VIBRATOR_ON"] = vibratorOn;
+        deviceInfoMessage["CHAIR_PRESSURE_SENSOR_VALUE"] = pressureValue;
 
         serializeJson(deviceInfoMessage, stringMessage);
 
-        Serial.printf("Sending DEVICEINFO: %s\n", stringMessage);
+        Serial.printf("Sending DEVICE_INFO: %s\n", stringMessage);
         webSocket.sendTXT(stringMessage);
         break;
     }
 
-    case CHAIR_LED_CHANGE:
+    case CHAIR_LED_ON:
     {
-        output0State = (bool)message["value"];
+        ledOn = (bool)message["value"];
         break;
     }
 
-    case CHAIR_VIBRATOR_CHANGE:
+    case CHAIR_VIBRATOR_ON:
     {
-        output1State = (bool)message["value"];
+        vibratorOn = (bool)message["value"];
         break;
     }
 

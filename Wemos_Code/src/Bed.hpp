@@ -9,9 +9,9 @@ const char DEVICE_TYPE[] = "Bed";
 
 // Global variables
 
-bool input0State = false;
-bool output0State = false;
-uint16_t analogInput0Value = 0;
+bool buttonPressed = false;
+bool ledOn = false;
+uint16_t pressureValue = 0;
 
 // Forward Declaration
 
@@ -36,11 +36,11 @@ void setup()
 
 void loop()
 {
-    updateDigitalI2CInputs(&input0State, BED_BUTTON_CHANGE);
+    updateDigitalI2CInputs(&buttonPressed, BED_BUTTON_PRESSED);
 
-    updateAnalogI2CInputs(5, 8, 255, &analogInput0Value, BED_FORCESENSOR_CHANGE);
+    updateAnalogI2CInputs(5, 8, 255, &pressureValue, BED_PRESSURE_SENSOR_VALUE);
 
-    updateDigitalI2COutputs(&output0State);
+    updateDigitalI2COutputs(&ledOn);
 
     sendHeartbeat();
 
@@ -56,27 +56,27 @@ void handleMessage(JsonObject message)
 {
     switch ((int)message["command"])
     {
-    case DEVICEINFO:
+    case DEVICE_INFO:
     {
         StaticJsonDocument<200> deviceInfoMessage;
         char stringMessage[200];
 
         deviceInfoMessage["UUID"] = UUID;
         deviceInfoMessage["Type"] = DEVICE_TYPE;
-        deviceInfoMessage["command"] = DEVICEINFO;
-        deviceInfoMessage["ledState"] = output0State;
-        deviceInfoMessage["pressureValue"] = analogInput0Value;
+        deviceInfoMessage["command"] = DEVICE_INFO;
+        deviceInfoMessage["BED_LED_ON"] = ledOn;
+        deviceInfoMessage["BED_PRESSURE_SENSOR_VALUE"] = pressureValue;
 
         serializeJson(deviceInfoMessage, stringMessage);
 
-        Serial.printf("Sending DEVICEINFO: %s\n", stringMessage);
+        Serial.printf("Sending DEVICE_INFO: %s\n", stringMessage);
         webSocket.sendTXT(stringMessage);
         break;
     }
 
-    case BED_LED_CHANGE:
+    case BED_LED_ON:
     {
-        output0State = (bool)message["value"];
+        ledOn = (bool)message["value"];
         break;
     }
 

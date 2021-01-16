@@ -11,8 +11,7 @@ const char DEVICE_TYPE[] = "Lamp";
 
 // Global variables
 
-bool input0State = false;
-
+bool movementDetected = false;
 int ledValue = 0;
 
 // Forward Declaration
@@ -41,7 +40,7 @@ void setup()
 
 void loop()
 {
-    updateDigitalI2CInputs(&input0State, LAMP_MOVEMENTSENSOR_CHANGE);
+    updateDigitalI2CInputs(&movementDetected, LAMP_MOVEMENT_DETECTED);
 
     updateLED();
 
@@ -59,25 +58,25 @@ void handleMessage(JsonObject message)
 {
     switch ((int)message["command"])
     {
-    case DEVICEINFO:
+    case DEVICE_INFO:
     {
         StaticJsonDocument<200> deviceInfoMessage;
         char stringMessage[200];
 
         deviceInfoMessage["UUID"] = UUID;
         deviceInfoMessage["Type"] = DEVICE_TYPE;
-        deviceInfoMessage["command"] = DEVICEINFO;
-        deviceInfoMessage["ledValue"] = ledValue;
-        deviceInfoMessage["movementSensorValue"] = input0State;
+        deviceInfoMessage["command"] = DEVICE_INFO;
+        deviceInfoMessage["LAMP_LED_VALUE"] = ledValue;
+        deviceInfoMessage["LAMP_MOVEMENT_DETECTED"] = movementDetected;
 
         serializeJson(deviceInfoMessage, stringMessage);
 
-        Serial.printf("Sending DEVICEINFO: %s\n", stringMessage);
+        Serial.printf("Sending DEVICE_INFO: %s\n", stringMessage);
         webSocket.sendTXT(stringMessage);
         break;
     }
 
-    case LAMP_LED_DIMMER_CHANGE:
+    case LAMP_LED_VALUE:
     {
         ledValue = (int)message["value"];
         break;

@@ -12,11 +12,10 @@ const char DEVICE_TYPE[] = "Door";
 
 // Global variables
 
-bool input0State = false;
-bool input1State = false;
-bool output0State = false;
-bool output1State = false;
-
+bool buttonInsidePressed = false;
+bool buttonOutsidePressed = false;
+bool ledInsideOn = false;
+bool ledOutsideOn = false;
 bool doorOpen = false;
 
 // Forward Declaration
@@ -43,9 +42,9 @@ void setup()
 
 void loop()
 {
-    updateDigitalI2CInputs(&input0State, DOOR_BUTTON1_CHANGE, &input1State, DOOR_BUTTON2_CHANGE);
+    updateDigitalI2CInputs(&buttonInsidePressed, DOOR_BUTTON_INSIDE_PRESSED, &buttonOutsidePressed, DOOR_BUTTON_OUTSIDE_PRESSED);
 
-    updateDigitalI2COutputs(&output0State, &output1State);
+    updateDigitalI2COutputs(&ledInsideOn, &ledOutsideOn);
 
     updateDoorPosition();
 
@@ -63,38 +62,38 @@ void handleMessage(JsonObject message)
 {
     switch ((int)message["command"])
     {
-    case DEVICEINFO:
+    case DEVICE_INFO:
     {
         StaticJsonDocument<200> deviceInfoMessage;
         char stringMessage[200];
 
         deviceInfoMessage["UUID"] = UUID;
         deviceInfoMessage["Type"] = DEVICE_TYPE;
-        deviceInfoMessage["command"] = DEVICEINFO;
-        deviceInfoMessage["ledStateInside"] = output0State;
-        deviceInfoMessage["ledStateOutside"] = output1State;
-        deviceInfoMessage["doorOpen"] = doorOpen;
+        deviceInfoMessage["command"] = DEVICE_INFO;
+        deviceInfoMessage["DOOR_LED_INSIDE_ON"] = ledInsideOn;
+        deviceInfoMessage["DOOR_LED_OUTSIDE_ON"] = ledOutsideOn;
+        deviceInfoMessage["DOOR_DOOR_OPEN"] = doorOpen;
 
         serializeJson(deviceInfoMessage, stringMessage);
 
-        Serial.printf("Sending DEVICEINFO: %s\n", stringMessage);
+        Serial.printf("Sending DEVICE_INFO: %s\n", stringMessage);
         webSocket.sendTXT(stringMessage);
         break;
     }
 
-    case DOOR_LED1_CHANGE:
+    case DOOR_LED_INSIDE_ON:
     {
-        output0State = (bool)message["value"];
+        ledInsideOn = (bool)message["value"];
         break;
     }
 
-    case DOOR_LED2_CHANGE:
+    case DOOR_LED_OUTSIDE_ON:
     {
-        output1State = (bool)message["value"];
+        ledOutsideOn = (bool)message["value"];
         break;
     }
 
-    case DOOR_SERVO_CHANGE:
+    case DOOR_DOOR_OPEN:
     {
         doorOpen = (bool)message["value"];
         break;

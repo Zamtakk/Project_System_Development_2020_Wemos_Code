@@ -4,10 +4,10 @@ const char DEVICE_TYPE[] = "SimulatedDevice";
 
 #define PIN_BUTTON_1 5 //D1
 #define PIN_BUTTON_2 4 //D2
-#define PIN_POTMETER A0
-#define PIN_LED_1 14 //D5
-#define PIN_LED_2 12 //D6
-#define PIN_LED_3 13 //D7
+#define PIN_DIMMER A0
+#define PIN_LED1 14 //D5
+#define PIN_LED2 12 //D6
+#define PIN_LED3 13 //D7
 
 //Includes
 
@@ -16,9 +16,9 @@ const char DEVICE_TYPE[] = "SimulatedDevice";
 
 // Global variables
 
-int LED_1_value = 0;
-int LED_2_value = 0;
-int LED_3_value = 0;
+uint8_t LED1_Value = 0;
+uint8_t LED2_Value = 0;
+uint8_t LED3_Value = 0;
 
 // Forward Declaration
 
@@ -69,11 +69,11 @@ void initPins()
     pinMode(PIN_BUTTON_1, INPUT_PULLUP);
     pinMode(PIN_BUTTON_2, INPUT_PULLUP);
 
-    pinMode(PIN_POTMETER, INPUT);
+    pinMode(PIN_DIMMER, INPUT);
 
-    pinMode(PIN_LED_1, OUTPUT);
-    pinMode(PIN_LED_2, OUTPUT);
-    pinMode(PIN_LED_3, OUTPUT);
+    pinMode(PIN_LED1, OUTPUT);
+    pinMode(PIN_LED2, OUTPUT);
+    pinMode(PIN_LED3, OUTPUT);
 }
 
 /*!
@@ -83,42 +83,42 @@ void handleMessage(JsonObject message)
 {
     switch ((int)message["command"])
     {
-    case DEVICEINFO:
+    case DEVICE_INFO:
     {
         StaticJsonDocument<200> deviceInfoMessage;
         char stringMessage[200];
 
         deviceInfoMessage["UUID"] = UUID;
         deviceInfoMessage["Type"] = DEVICE_TYPE;
-        deviceInfoMessage["command"] = DEVICEINFO;
-        deviceInfoMessage["led1Value"] = LED_1_value;
-        deviceInfoMessage["led2Value"] = LED_2_value;
-        deviceInfoMessage["led3Value"] = LED_3_value;
+        deviceInfoMessage["command"] = DEVICE_INFO;
+        deviceInfoMessage["SIMULATED_LED1_VALUE"] = LED1_Value;
+        deviceInfoMessage["SIMULATED_LED2_VALUE"] = LED2_Value;
+        deviceInfoMessage["SIMULATED_LED3_VALUE"] = LED3_Value;
 
         serializeJson(deviceInfoMessage, stringMessage);
 
-        Serial.printf("Sending DEVICEINFO: %s\n", stringMessage);
+        Serial.printf("Sending DEVICE_INFO: %s\n", stringMessage);
         webSocket.sendTXT(stringMessage);
         break;
     }
-    case SIMULATED_LED1_CHANGE:
+    case SIMULATED_LED1_VALUE:
         if ((int)message["value"] <= 255 && (int)message["value"] >= 0)
         {
-            LED_1_value = (int)message["value"];
+            LED1_Value = (int)message["value"];
         }
         break;
 
-    case SIMULATED_LED2_CHANGE:
+    case SIMULATED_LED2_VALUE:
         if ((int)message["value"] <= 255 && (int)message["value"] >= 0)
         {
-            LED_2_value = (int)message["value"];
+            LED2_Value = (int)message["value"];
         }
         break;
 
-    case SIMULATED_LED3_CHANGE:
+    case SIMULATED_LED3_VALUE:
         if ((int)message["value"] <= 255 && (int)message["value"] >= 0)
         {
-            LED_3_value = (int)message["value"];
+            LED3_Value = (int)message["value"];
         }
         break;
 
@@ -133,6 +133,7 @@ void handleMessage(JsonObject message)
 */
 void handleButtons()
 {
+    static bool firstTime = true;
     int button_1_State = 1;
     static int button_1_PreviousState = 1;
     int button_2_State = 1;
@@ -143,19 +144,22 @@ void handleButtons()
 
     delay(50); // Simple debounce
 
-    if (button_1_State != button_1_PreviousState)
+    if (button_1_State != button_1_PreviousState || firstTime)
     {
         Serial.printf("Buttons 1 state: %d\n", button_1_State);
         button_1_PreviousState = button_1_State;
-        sendBoolMessage(SIMULATED_BUTTON1_CHANGE, !button_1_State);
+        sendBoolMessage(SIMULATED_BUTTON1_PRESSED, !button_1_State);
     }
 
-    if (button_2_State != button_2_PreviousState)
+    if (button_2_State != button_2_PreviousState || firstTime)
     {
         Serial.printf("Buttons 2 state: %d\n", button_2_State);
         button_2_PreviousState = button_2_State;
-        sendBoolMessage(SIMULATED_BUTTON2_CHANGE, !button_2_State);
+        sendBoolMessage(SIMULATED_BUTTON2_PRESSED, !button_2_State);
     }
+
+    if (firstTime)
+        firstTime = false;
 }
 
 /*!
@@ -163,22 +167,26 @@ void handleButtons()
 */
 void handlePotmeter()
 {
-    int Potmeter_value = 0;
-    static int Potmeter_previous_value = 0;
+    static bool firstTime = true;
+    int dimmerValue = 0;
+    static int dimmerValue_Previous = 0;
 
     for (int i = 0; i < 10; i++)
     {
-        Potmeter_value += analogRead(PIN_POTMETER);
+        dimmerValue += analogRead(PIN_DIMMER);
     }
-    Potmeter_value /= 10;
+    dimmerValue /= 10;
 
-    if (abs(Potmeter_value - Potmeter_previous_value) > 20)
+    if (abs(dimmerValue - dimmerValue_Previous) > 20 || firstTime)
     {
-        Potmeter_previous_value = Potmeter_value;
-        Potmeter_value = Potmeter_value / 1023.0 * 255.0;
-        Serial.printf("Potmeter value: %d\n", Potmeter_value);
-        sendIntMessage(SIMULATED_POTMETER_CHANGE, Potmeter_value);
+        dimmerValue_Previous = dimmerValue;
+        dimmerValue = dimmerValue / 1023.0 * 255.0;
+        Serial.printf("Potmeter value: %d\n", dimmerValue);
+        sendIntMessage(SIMULATED_DIMMER_VALUE, dimmerValue);
     }
+
+    if (firstTime)
+        firstTime = false;
 }
 
 /*!
@@ -186,28 +194,32 @@ void handlePotmeter()
 */
 void handleLEDs()
 {
-    static int LED_1_previous_value = 0;
-    static int LED_2_previous_value = 0;
-    static int LED_3_previous_value = 0;
+    static bool firstTime = true;
+    static uint8_t LED1_Value_Previous = 0;
+    static uint8_t LED2_Value_Previous = 0;
+    static uint8_t LED3_Value_Previous = 0;
 
-    if (LED_1_value != LED_1_previous_value)
+    if (LED1_Value != LED1_Value_Previous || firstTime)
     {
-        LED_1_previous_value = LED_1_value;
-        analogWrite(PIN_LED_1, LED_1_value);
-        Serial.printf("Led 1 updated to %d!\n", LED_1_value);
+        LED1_Value_Previous = LED1_Value;
+        analogWrite(PIN_LED1, LED1_Value);
+        Serial.printf("Led 1 updated to %d!\n", LED1_Value);
     }
 
-    if (LED_2_value != LED_2_previous_value)
+    if (LED2_Value != LED2_Value_Previous || firstTime)
     {
-        LED_2_previous_value = LED_2_value;
-        analogWrite(PIN_LED_2, LED_2_value);
-        Serial.printf("Led 2 updated to %d!\n", LED_2_value);
+        LED2_Value_Previous = LED2_Value;
+        analogWrite(PIN_LED2, LED2_Value);
+        Serial.printf("Led 2 updated to %d!\n", LED2_Value);
     }
 
-    if (LED_3_value != LED_3_previous_value)
+    if (LED3_Value != LED3_Value_Previous || firstTime)
     {
-        LED_3_previous_value = LED_3_value;
-        analogWrite(PIN_LED_3, LED_3_value);
-        Serial.printf("Led 3 updated to %d!\n", LED_3_value);
+        LED3_Value_Previous = LED3_Value;
+        analogWrite(PIN_LED3, LED3_Value);
+        Serial.printf("Led 3 updated to %d!\n", LED3_Value);
     }
+
+    if (firstTime)
+        firstTime = false;
 }
