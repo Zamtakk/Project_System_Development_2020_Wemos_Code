@@ -1,8 +1,6 @@
 // Include libraries
 #include <Arduino.h>
 
-#include <ESP8266WiFi.h>
-#include <ESP8266WiFiMulti.h>
 #include <WebSocketsClient.h>
 #include <ArduinoJson.h>
 #include <Hash.h>
@@ -10,6 +8,7 @@
 #include <EEPROM.h>
 
 #include "CommandTypes.hpp"
+#include "DefaultFunctions.hpp"
 
 // Defines
 #define PIN_BUTTON_1 5 //D1
@@ -24,7 +23,6 @@
 #define HEARTBEAT_INTERVAL 500
 
 // Global variables
-ESP8266WiFiMulti wifi;
 WebSocketsClient webSocket;
 
 char UUID[11];
@@ -97,23 +95,6 @@ void initIO()
     pinMode(PIN_LED_1, OUTPUT);
     pinMode(PIN_LED_2, OUTPUT);
     pinMode(PIN_LED_3, OUTPUT);
-}
-
-/*!
-    @brief Starts the WiFi connection
-*/
-void initWifi()
-{
-    wifi.addAP("PJSDV_TEMP", "allhailthemightypi");
-
-    Serial.printf("[WiFi] Connecting to Pi...\n");
-    while (wifi.run() != WL_CONNECTED)
-    {
-        delay(100);
-    }
-
-    Serial.print("[WiFi] Connected, IP address: ");
-    Serial.println(WiFi.localIP());
 }
 
 /*!
@@ -392,7 +373,8 @@ void sendHeartbeat()
     if ((millis() - lastTime) > HEARTBEAT_INTERVAL)
     {
         lastTime = millis();
-        if(websocketConnected){
+        if (websocketConnected)
+        {
             StaticJsonDocument<200> message;
             char stringMessage[200];
 
