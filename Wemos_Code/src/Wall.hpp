@@ -96,6 +96,8 @@ void initIO()
     Serial.begin(115200);
     Serial.printf("\n\n\n");
 
+    FastLED.addLeds<WS2812, PIN_LEDSTRIP, GRB>(leds, NUM_LEDS);
+
     Wire.begin();
     checkConnectionI2C();
 }
@@ -232,7 +234,7 @@ void handleMessage(JsonObject message)
 
     case WALL_LEDSTRIP_CHANGE:
     {
-        ledValue = (bool)message["value"];
+        ledValue = (int)message["value"];
         break;
     }
 
