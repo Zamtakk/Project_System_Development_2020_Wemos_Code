@@ -1,4 +1,7 @@
 // Defines
+
+const char DEVICE_TYPE[] = "SimulatedDevice";
+
 #define PIN_BUTTON_1 5 //D1
 #define PIN_BUTTON_2 4 //D2
 #define PIN_POTMETER A0
@@ -6,7 +9,10 @@
 #define PIN_LED_2 12 //D6
 #define PIN_LED_3 13 //D7
 
-#define DEVICE_TYPE "SimulatedDevice"
+//Includes
+
+#include "CommandTypes.hpp"
+#include "DefaultFunctions.hpp"
 
 // Global variables
 
@@ -16,26 +22,29 @@ int LED_3_value = 0;
 
 // Forward Declaration
 
-void initIO();
+void initPins();
 
+void handleMessage(JsonObject message);
 void handleButtons();
 void handlePotmeter();
 void handleLEDs();
 
-#include "CommandTypes.hpp"
-#include "DefaultFunctions.hpp"
-
 // Setup
+
 void setup()
 {
-    initIO();
+    initSerial();
+
+    initPins();
 
     generateUUID();
 
     initWifi();
 
-    initWebsocket();
+    initWebsocket(&handleMessage, DEVICE_TYPE);
 }
+
+// Loop
 
 void loop()
 {
@@ -51,14 +60,12 @@ void loop()
 }
 
 // Function definitions
+
 /*!
     @brief Starts the Serial connection and initializes all the pins
 */
-void initIO()
+void initPins()
 {
-    Serial.begin(115200);
-    Serial.printf("\n\n\n");
-
     pinMode(PIN_BUTTON_1, INPUT_PULLUP);
     pinMode(PIN_BUTTON_2, INPUT_PULLUP);
 
