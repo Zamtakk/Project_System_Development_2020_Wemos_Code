@@ -9,9 +9,9 @@ const char DEVICE_TYPE[] = "WIB";
 
 // Global variables
 
-bool input0State = false;
-bool output0State = false;
-uint16_t analogInput0Value = 0;
+bool switchOn = false;
+bool ledOn = false;
+uint16_t dimmerValue = 0;
 
 // Forward Declaration
 
@@ -36,11 +36,11 @@ void setup()
 
 void loop()
 {
-    updateDigitalI2CInputs(&input0State, WIB_SWITCH_CHANGE);
+    updateDigitalI2CInputs(&switchOn, WIB_SWITCH_ON);
 
-    updateAnalogI2CInputs(5, 8, 255, &analogInput0Value, WIB_POTMETER_CHANGE);
+    updateAnalogI2CInputs(5, 8, 255, &dimmerValue, WIB_DIMMER_VALUE);
 
-    updateDigitalI2COutputs(&output0State);
+    updateDigitalI2COutputs(&ledOn);
 
     sendHeartbeat();
 
@@ -56,28 +56,28 @@ void handleMessage(JsonObject message)
 {
     switch ((int)message["command"])
     {
-    case DEVICEINFO:
+    case DEVICE_INFO:
     {
         StaticJsonDocument<200> deviceInfoMessage;
         char stringMessage[200];
 
         deviceInfoMessage["UUID"] = UUID;
         deviceInfoMessage["Type"] = DEVICE_TYPE;
-        deviceInfoMessage["command"] = DEVICEINFO;
-        deviceInfoMessage["ledState"] = output0State;
-        deviceInfoMessage["switchState"] = input0State;
-        deviceInfoMessage["potValue"] = analogInput0Value;
+        deviceInfoMessage["command"] = DEVICE_INFO;
+        deviceInfoMessage["WIB_SWITCH_ON"] = switchOn;
+        deviceInfoMessage["WIB_LED_ON"] = ledOn;
+        deviceInfoMessage["WIB_DIMMER_VALUE"] = dimmerValue;
 
         serializeJson(deviceInfoMessage, stringMessage);
 
-        Serial.printf("Sending DEVICEINFO: %s\n", stringMessage);
+        Serial.printf("Sending DEVICE_INFO: %s\n", stringMessage);
         webSocket.sendTXT(stringMessage);
         break;
     }
 
-    case WIB_LED_CHANGE:
+    case WIB_LED_ON:
     {
-        output0State = (bool)message["value"];
+        ledOn = (bool)message["value"];
         break;
     }
 
