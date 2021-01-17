@@ -108,13 +108,16 @@ void UpdateCooler()
     static bool firstTime = true;
     static bool coolingOn_Previous = false;
 
-    if (coolerOn != coolingOn_Previous || firstTime)
+    if (firstTime){
+        firstTime = false;
+        coolingOn_Previous = coolerOn;
+        return;
+    }
+
+    if (coolerOn != coolingOn_Previous)
     {
         coolingOn_Previous = coolerOn;
         digitalWrite(DIRECT_OUTPUT_PIN, coolerOn);
         Serial.printf("Cooling ON changed to %d!\n", coolerOn);
     }
-
-    if (firstTime)
-        firstTime = false;
 }

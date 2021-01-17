@@ -144,22 +144,27 @@ void handleButtons()
 
     delay(50); // Simple debounce
 
-    if (button_1_State != button_1_PreviousState || firstTime)
+    if (firstTime)
+    {
+        firstTime = false;
+        button_1_PreviousState = button_1_State;
+        button_2_PreviousState = button_2_State;
+        return;
+    }
+
+    if (button_1_State != button_1_PreviousState)
     {
         Serial.printf("Buttons 1 state: %d\n", button_1_State);
         button_1_PreviousState = button_1_State;
         sendBoolMessage(SIMULATED_BUTTON1_PRESSED, !button_1_State);
     }
 
-    if (button_2_State != button_2_PreviousState || firstTime)
+    if (button_2_State != button_2_PreviousState)
     {
         Serial.printf("Buttons 2 state: %d\n", button_2_State);
         button_2_PreviousState = button_2_State;
         sendBoolMessage(SIMULATED_BUTTON2_PRESSED, !button_2_State);
     }
-
-    if (firstTime)
-        firstTime = false;
 }
 
 /*!
@@ -177,16 +182,20 @@ void handlePotmeter()
     }
     dimmerValue /= 10;
 
-    if (abs(dimmerValue - dimmerValue_Previous) > 20 || firstTime)
+    if (firstTime)
+    {
+        firstTime = false;
+        dimmerValue_Previous = dimmerValue;
+        return;
+    }
+
+    if (abs(dimmerValue - dimmerValue_Previous) > 20)
     {
         dimmerValue_Previous = dimmerValue;
         dimmerValue = dimmerValue / 1023.0 * 255.0;
         Serial.printf("Potmeter value: %d\n", dimmerValue);
         sendIntMessage(SIMULATED_DIMMER_VALUE, dimmerValue);
     }
-
-    if (firstTime)
-        firstTime = false;
 }
 
 /*!
@@ -199,27 +208,33 @@ void handleLEDs()
     static uint8_t LED2_Value_Previous = 0;
     static uint8_t LED3_Value_Previous = 0;
 
-    if (LED1_Value != LED1_Value_Previous || firstTime)
+    if (firstTime)
+    {
+        firstTime = false;
+        LED1_Value_Previous = LED1_Value;
+        LED2_Value_Previous = LED2_Value;
+        LED3_Value_Previous = LED3_Value;
+        return;
+    }
+
+    if (LED1_Value != LED1_Value_Previous)
     {
         LED1_Value_Previous = LED1_Value;
         analogWrite(PIN_LED1, LED1_Value);
         Serial.printf("Led 1 updated to %d!\n", LED1_Value);
     }
 
-    if (LED2_Value != LED2_Value_Previous || firstTime)
+    if (LED2_Value != LED2_Value_Previous)
     {
         LED2_Value_Previous = LED2_Value;
         analogWrite(PIN_LED2, LED2_Value);
         Serial.printf("Led 2 updated to %d!\n", LED2_Value);
     }
 
-    if (LED3_Value != LED3_Value_Previous || firstTime)
+    if (LED3_Value != LED3_Value_Previous)
     {
         LED3_Value_Previous = LED3_Value;
         analogWrite(PIN_LED3, LED3_Value);
         Serial.printf("Led 3 updated to %d!\n", LED3_Value);
     }
-
-    if (firstTime)
-        firstTime = false;
 }

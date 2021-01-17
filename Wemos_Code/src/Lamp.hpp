@@ -96,13 +96,17 @@ void updateLED()
     static bool firstTime = true;
     static int ledValue_Previous = 0;
 
-    if (ledValue != ledValue_Previous || firstTime)
+    if (firstTime)
+    {
+        firstTime = false;
+        ledValue_Previous = ledValue;
+        return;
+    }
+
+    if (ledValue != ledValue_Previous)
     {
         ledValue_Previous = ledValue;
         setFastLedRGBColor(ledValue, ledValue, ledValue);
         Serial.printf("Lamp updated to %d!\n", ledValue);
     }
-
-    if (firstTime)
-        firstTime = false;
 }
