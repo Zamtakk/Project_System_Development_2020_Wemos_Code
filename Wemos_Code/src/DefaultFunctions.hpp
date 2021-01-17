@@ -87,13 +87,6 @@ void initI2C()
 }
 
 /*!
-    @brief Starts the FastLED connection
-*/
-void initFastLED()
-{
-}
-
-/*!
     @brief Starts the WiFi connection
 */
 void initWifi()
@@ -154,7 +147,6 @@ void websocketEvent(WStype_t type, uint8_t *payload, size_t length)
     case WStype_CONNECTED:
     {
         Serial.printf("[Websocket] Connected!\n");
-        websocketConnected = true;
 
         StaticJsonDocument<200> message;
         char stringMessage[200];
@@ -168,6 +160,8 @@ void websocketEvent(WStype_t type, uint8_t *payload, size_t length)
 
         Serial.printf("[Websocket] Sending registration: %s\n", stringMessage);
         webSocket.sendTXT(stringMessage);
+
+        websocketConnected = true;
         break;
     }
     case WStype_TEXT:
@@ -380,56 +374,57 @@ void readDigitalI2CInputs(bool *input0State, bool *input1State)
 */
 void updateDigitalI2CInputs(bool *input0State, int input0Command, bool *input1State, int input1Command)
 {
-    bool input0, input1;
     static bool input0_Previous = false;
     static bool input1_Previous = false;
     static bool firstTime = true;
 
-    if (input0State != nullptr && input1State != nullptr)
+    if (input1State != nullptr)
     {
-        readDigitalI2CInputs(&input0, &input1);
-    }
-    else if (input0State != nullptr)
-    {
-        readDigitalI2CInputs(&input0);
+        readDigitalI2CInputs(input0State, input1State);
     }
     else
     {
+        readDigitalI2CInputs(input0State);
+    }
+
+    if (firstTime)
+    {
+        firstTime = false;
+        input0_Previous = *input0State;
+        if (input1State != nullptr)
+            input1_Previous = *input1State;
         return;
     }
 
     if (input0State != nullptr)
     {
-        if (input0 != input0_Previous || firstTime)
+        if (*input0State != input0_Previous || firstTime)
         {
-            Serial.printf("Switch 0 state: %d\n", input0);
-            input0_Previous = input0;
+            Serial.printf("Switch 0 state: %d\n", *input0State);
+            input0_Previous = *input0State;
             if (input0Command == 0)
             {
                 Serial.printf("[ERROR] Invalid command given for switch 0\n");
                 return;
             }
-            sendBoolMessage(input0Command, input0State);
+            sendBoolMessage(input0Command, *input0State);
         }
     }
 
     if (input1State != nullptr)
     {
-        if (input1 != input1_Previous || firstTime)
+        if (*input1State != input1_Previous || firstTime)
         {
-            Serial.printf("Switch 1 state: %d\n", input1);
-            input1_Previous = input1;
+            Serial.printf("Switch 1 state: %d\n", *input1State);
+            input1_Previous = *input1State;
             if (input1Command == 0)
             {
                 Serial.printf("[ERROR] Invalid command given for switch 1\n");
                 return;
             }
-            sendBoolMessage(input1Command, input1State);
+            sendBoolMessage(input1Command, *input1State);
         }
     }
-
-    if (firstTime)
-        firstTime = false;
 }
 
 /*!
@@ -489,17 +484,27 @@ void updateAnalogI2CInputs(int sampleCount, int stabilityMargin, uint16_t output
     static bool input1_Previous = false;
     static bool firstTime = true;
 
-    if (input0Value != nullptr && input1Value != nullptr)
+    if (input1Value != nullptr)
     {
         readAnalogI2CInputs(sampleCount, &input0, &input1);
     }
-    else if (input0Value != nullptr)
+    else
     {
         readAnalogI2CInputs(sampleCount, &input0);
     }
-    else
+
+    if (firstTime)
     {
-        return;
+        firstTime = false;
+
+        input0_Previous = input0;
+        *input0Value = input0 / 1023.0 * (float)outputScale;
+
+        if (input1Value != nullptr)
+        {
+            input1_Previous = input1;
+            *input1Value = input1 / 1023.0 * (float)outputScale;
+        }
     }
 
     if (input0Value != nullptr)
@@ -508,13 +513,13 @@ void updateAnalogI2CInputs(int sampleCount, int stabilityMargin, uint16_t output
         {
             input0_Previous = input0;
             *input0Value = input0 / 1023.0 * (float)outputScale;
-            Serial.printf("Analog 0 value: %d\n", input0);
+            Serial.printf("Analog 0 value: %d\n", *input0Value);
             if (input0Command == 0)
             {
                 Serial.printf("[ERROR] Invalid command given for switch 0\n");
                 return;
             }
-            sendIntMessage(input0Command, input0);
+            sendIntMessage(input0Command, *input0Value);
         }
     }
 
@@ -524,18 +529,15 @@ void updateAnalogI2CInputs(int sampleCount, int stabilityMargin, uint16_t output
         {
             input1_Previous = input1;
             *input1Value = input1 / 1023.0 * (float)outputScale;
-            Serial.printf("Analog 1 value: %d\n", input1);
+            Serial.printf("Analog 1 value: %d\n", *input1Value);
             if (input1Command == 0)
             {
                 Serial.printf("[ERROR] Invalid command given for switch 1\n");
                 return;
             }
-            sendIntMessage(input1Command, input1);
+            sendIntMessage(input1Command, *input1Value);
         }
     }
-
-    if (firstTime)
-        firstTime = false;
 }
 
 /*!
