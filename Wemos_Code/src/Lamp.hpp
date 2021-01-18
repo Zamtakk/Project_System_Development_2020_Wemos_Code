@@ -18,7 +18,6 @@ int ledValue = 0;
 
 void handleMessage(JsonObject message);
 
-void handleDigitalInput();
 void updateLED();
 
 // Setup
