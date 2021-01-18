@@ -70,7 +70,6 @@ void handleMessage(JsonObject message)
         deviceInfoMessage["Type"] = DEVICE_TYPE;
         deviceInfoMessage["command"] = DEVICE_INFO;
         deviceInfoMessage["WALL_CURTAIN_OPEN"] = curtainOpen;
-        deviceInfoMessage["WALL_LEDSTRIP_VALUE"] = ledstripValue;
         deviceInfoMessage["WALL_DIMMER_VALUE"] = dimmerValue;
         deviceInfoMessage["WALL_LDR_VALUE"] = LDRValue;
 
