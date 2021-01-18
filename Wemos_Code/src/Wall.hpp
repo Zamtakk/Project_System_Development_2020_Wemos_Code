@@ -69,10 +69,10 @@ void handleMessage(JsonObject message)
         deviceInfoMessage["UUID"] = UUID;
         deviceInfoMessage["Type"] = DEVICE_TYPE;
         deviceInfoMessage["command"] = DEVICE_INFO;
-        deviceInfoMessage["WALL_LEDSTRIP_ON"] = ledstripValue;
-        deviceInfoMessage["WALL_LDR_VALUE"] = LDRValue;
-        deviceInfoMessage["WALL_DIMMER_VALUE"] = dimmerValue;
         deviceInfoMessage["WALL_CURTAIN_OPEN"] = curtainOpen;
+        deviceInfoMessage["WALL_LEDSTRIP_ON"] = ledstripValue;
+        deviceInfoMessage["WALL_DIMMER_VALUE"] = dimmerValue;
+        deviceInfoMessage["WALL_LDR_VALUE"] = LDRValue;
 
         serializeJson(deviceInfoMessage, stringMessage);
 
