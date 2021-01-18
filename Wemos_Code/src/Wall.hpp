@@ -1,8 +1,8 @@
 // Defines
 
-const char DEVICE_TYPE[] = "Lamp";
+const char DEVICE_TYPE[] = "Wall";
 
-#define NUMBER_OF_LEDS 1
+#define NUMBER_OF_LEDS 3
 
 //Includes
 
@@ -11,14 +11,16 @@ const char DEVICE_TYPE[] = "Lamp";
 
 // Global variables
 
-bool movementDetected = false;
-int ledValue = 0;
+bool curtainOpen = false;
+uint16_t LDRValue = 0;
+uint16_t dimmerValue = 0;
+int ledstripValue = 0;
 
 // Forward Declaration
 
 void handleMessage(JsonObject message);
 
-void updateLED();
+void updateLedstrip();
 
 // Setup
 
@@ -39,9 +41,11 @@ void setup()
 
 void loop()
 {
-    updateDigitalI2CInputs(&movementDetected, LAMP_MOVEMENT_DETECTED);
+    updateAnalogI2CInputs(10, 20, 255, &LDRValue, WALL_LDR_VALUE, &dimmerValue, WALL_DIMMER_VALUE);
 
-    updateLED();
+    updateDigitalI2COutputs(&curtainOpen);
+
+    updateLedstrip();
 
     sendHeartbeat();
 
@@ -65,8 +69,9 @@ void handleMessage(JsonObject message)
         deviceInfoMessage["UUID"] = UUID;
         deviceInfoMessage["Type"] = DEVICE_TYPE;
         deviceInfoMessage["command"] = DEVICE_INFO;
-        deviceInfoMessage["LAMP_LED_VALUE"] = ledValue;
-        deviceInfoMessage["LAMP_MOVEMENT_DETECTED"] = movementDetected;
+        deviceInfoMessage["WALL_CURTAIN_OPEN"] = curtainOpen;
+        deviceInfoMessage["WALL_DIMMER_VALUE"] = dimmerValue;
+        deviceInfoMessage["WALL_LDR_VALUE"] = LDRValue;
 
         serializeJson(deviceInfoMessage, stringMessage);
 
@@ -75,9 +80,15 @@ void handleMessage(JsonObject message)
         break;
     }
 
-    case LAMP_LED_VALUE:
+    case WALL_CURTAIN_OPEN:
     {
-        ledValue = (int)message["value"];
+        curtainOpen = (bool)message["value"];
+        break;
+    }
+
+    case WALL_LEDSTRIP_VALUE:
+    {
+        ledstripValue = (int)message["value"];
         break;
     }
 
@@ -88,24 +99,16 @@ void handleMessage(JsonObject message)
 }
 
 /*!
-    @brief Checks if the LED state is still the same as the previous and updates the LED accordingly
+    @brief Checks if the ledstrip state is still the same as the previous and updates the ledstrip accordingly
 */
-void updateLED()
+void updateLedstrip()
 {
-    static bool firstTime = true;
-    static int ledValue_Previous = 0;
+    static int ledstrip_Previous = 0;
 
-    if (firstTime)
+    if (ledstripValue != ledstrip_Previous)
     {
-        firstTime = false;
-        ledValue_Previous = ledValue;
-        return;
-    }
-
-    if (ledValue != ledValue_Previous)
-    {
-        ledValue_Previous = ledValue;
-        setFastLedRGBColor(ledValue, ledValue, ledValue);
-        Serial.printf("Lamp updated to %d!\n", ledValue);
+        ledstrip_Previous = ledstripValue;
+        setFastLedRGBColor(ledstripValue, ledstripValue, ledstripValue);
+        Serial.printf("Ledstrip updated to %d!\n", ledstripValue);
     }
 }

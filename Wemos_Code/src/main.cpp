@@ -24,6 +24,10 @@
 #include "SimulatedDevice.hpp"
 #endif
 
+#ifdef WALL
+#include "Wall.hpp"
+#endif
+
 #ifdef WIB
 #include "WIB.hpp"
 #endif

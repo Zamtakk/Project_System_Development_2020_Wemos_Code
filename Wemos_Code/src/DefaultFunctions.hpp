@@ -480,8 +480,8 @@ void readAnalogI2CInputs(int sampleCount, uint16_t *input0Value, uint16_t *input
 void updateAnalogI2CInputs(int sampleCount, int stabilityMargin, uint16_t outputScale, uint16_t *input0Value, int input0Command, uint16_t *input1Value, int input1Command)
 {
     uint16_t input0, input1;
-    static bool input0_Previous = false;
-    static bool input1_Previous = false;
+    static uint16_t input0_Previous = 0;
+    static uint16_t input1_Previous = 0;
     static bool firstTime = true;
 
     if (input1Value != nullptr)
