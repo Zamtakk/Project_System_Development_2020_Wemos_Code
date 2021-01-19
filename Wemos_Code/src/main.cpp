@@ -8,6 +8,10 @@
 #include "Chair.hpp"
 #endif
 
+#ifdef COLUMN
+#include "Column.hpp"
+#endif
+
 #ifdef DOOR
 #include "Door.hpp"
 #endif
@@ -30,8 +34,4 @@
 
 #ifdef WIB
 #include "WIB.hpp"
-#endif
-
-#ifdef COLUMN
-#include "Column.hpp"
 #endif
