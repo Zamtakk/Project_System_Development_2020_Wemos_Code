@@ -1,6 +1,8 @@
 // Defines
 
-const char DEVICE_TYPE[] = "Bed";
+const char DEVICE_TYPE[] = "Lamp";
+
+#define NUMBER_OF_LEDS 1
 
 //Includes
 
@@ -9,13 +11,14 @@ const char DEVICE_TYPE[] = "Bed";
 
 // Global variables
 
-bool buttonPressed = false;
-bool ledOn = false;
-uint16_t pressureValue = 0;
+bool movementDetected = false;
+int ledValue = 0;
 
 // Forward Declaration
 
 void handleMessage(JsonObject message);
+
+void updateLED();
 
 // Setup
 
@@ -36,11 +39,9 @@ void setup()
 
 void loop()
 {
-    updateDigitalI2CInputs(&buttonPressed, BED_BUTTON_PRESSED);
+    updateDigitalI2CInputs(&movementDetected, LAMP_MOVEMENT_DETECTED);
 
-    updateAnalogI2CInputs(5, 8, 255, &pressureValue, BED_PRESSURE_SENSOR_VALUE);
-
-    updateDigitalI2COutputs(&ledOn);
+    updateLED();
 
     sendHeartbeat();
 
@@ -64,8 +65,8 @@ void handleMessage(JsonObject message)
         deviceInfoMessage["UUID"] = UUID;
         deviceInfoMessage["Type"] = DEVICE_TYPE;
         deviceInfoMessage["command"] = DEVICE_INFO;
-        deviceInfoMessage["BED_LED_ON"] = ledOn;
-        deviceInfoMessage["BED_PRESSURE_SENSOR_VALUE"] = pressureValue;
+        deviceInfoMessage["LAMP_LED_VALUE"] = ledValue;
+        deviceInfoMessage["LAMP_MOVEMENT_DETECTED"] = movementDetected;
 
         serializeJson(deviceInfoMessage, stringMessage);
 
@@ -74,14 +75,37 @@ void handleMessage(JsonObject message)
         break;
     }
 
-    case BED_LED_ON:
+    case LAMP_LED_VALUE:
     {
-        ledOn = (bool)message["value"];
+        ledValue = (int)message["value"];
         break;
     }
 
     default:
         Serial.printf("[Error] Unsupported command received: %d\n", (int)message["command"]);
         break;
+    }
+}
+
+/*!
+    @brief Checks if the LED state is still the same as the previous and updates the LED accordingly
+*/
+void updateLED()
+{
+    static bool firstTime = true;
+    static int ledValue_Previous = 0;
+
+    if (firstTime)
+    {
+        firstTime = false;
+        ledValue_Previous = ledValue;
+        return;
+    }
+
+    if (ledValue != ledValue_Previous)
+    {
+        ledValue_Previous = ledValue;
+        setFastLedRGBColor(ledValue, ledValue, ledValue);
+        Serial.printf("Lamp updated to %d!\n", ledValue);
     }
 }

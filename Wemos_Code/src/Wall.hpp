@@ -1,6 +1,8 @@
 // Defines
 
-const char DEVICE_TYPE[] = "Bed";
+const char DEVICE_TYPE[] = "Wall";
+
+#define NUMBER_OF_LEDS 3
 
 //Includes
 
@@ -9,13 +11,16 @@ const char DEVICE_TYPE[] = "Bed";
 
 // Global variables
 
-bool buttonPressed = false;
-bool ledOn = false;
-uint16_t pressureValue = 0;
+bool curtainOpen = false;
+uint16_t LDRValue = 0;
+uint16_t dimmerValue = 0;
+int ledstripValue = 0;
 
 // Forward Declaration
 
 void handleMessage(JsonObject message);
+
+void updateLedstrip();
 
 // Setup
 
@@ -36,11 +41,11 @@ void setup()
 
 void loop()
 {
-    updateDigitalI2CInputs(&buttonPressed, BED_BUTTON_PRESSED);
+    updateAnalogI2CInputs(10, 20, 255, &LDRValue, WALL_LDR_VALUE, &dimmerValue, WALL_DIMMER_VALUE);
 
-    updateAnalogI2CInputs(5, 8, 255, &pressureValue, BED_PRESSURE_SENSOR_VALUE);
+    updateDigitalI2COutputs(&curtainOpen);
 
-    updateDigitalI2COutputs(&ledOn);
+    updateLedstrip();
 
     sendHeartbeat();
 
@@ -64,8 +69,9 @@ void handleMessage(JsonObject message)
         deviceInfoMessage["UUID"] = UUID;
         deviceInfoMessage["Type"] = DEVICE_TYPE;
         deviceInfoMessage["command"] = DEVICE_INFO;
-        deviceInfoMessage["BED_LED_ON"] = ledOn;
-        deviceInfoMessage["BED_PRESSURE_SENSOR_VALUE"] = pressureValue;
+        deviceInfoMessage["WALL_CURTAIN_OPEN"] = curtainOpen;
+        deviceInfoMessage["WALL_DIMMER_VALUE"] = dimmerValue;
+        deviceInfoMessage["WALL_LDR_VALUE"] = LDRValue;
 
         serializeJson(deviceInfoMessage, stringMessage);
 
@@ -74,14 +80,35 @@ void handleMessage(JsonObject message)
         break;
     }
 
-    case BED_LED_ON:
+    case WALL_CURTAIN_OPEN:
     {
-        ledOn = (bool)message["value"];
+        curtainOpen = (bool)message["value"];
+        break;
+    }
+
+    case WALL_LEDSTRIP_VALUE:
+    {
+        ledstripValue = (int)message["value"];
         break;
     }
 
     default:
         Serial.printf("[Error] Unsupported command received: %d\n", (int)message["command"]);
         break;
+    }
+}
+
+/*!
+    @brief Checks if the ledstrip state is still the same as the previous and updates the ledstrip accordingly
+*/
+void updateLedstrip()
+{
+    static int ledstrip_Previous = 0;
+
+    if (ledstripValue != ledstrip_Previous)
+    {
+        ledstrip_Previous = ledstripValue;
+        setFastLedRGBColor(ledstripValue, ledstripValue, ledstripValue);
+        Serial.printf("Ledstrip updated to %d!\n", ledstripValue);
     }
 }
