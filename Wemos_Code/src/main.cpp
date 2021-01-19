@@ -1,4 +1,4 @@
-#define SIMULATED_DEVICE
+#define COLUMN
 
 #ifdef BED
 #include "Bed.hpp"
@@ -6,6 +6,10 @@
 
 #ifdef CHAIR
 #include "Chair.hpp"
+#endif
+
+#ifdef COLUMN
+#include "Column.hpp"
 #endif
 
 #ifdef DOOR
