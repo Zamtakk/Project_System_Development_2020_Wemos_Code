@@ -39,7 +39,7 @@ void loop()
 {
     updateDigitalI2CInputs(&buttonPressed, COLUMN_BUTTON_PRESSED);
 
-    updateAnalogI2CInputs(10, 20, 255, &smokeValue, COLUMN_SMOKE_SENSOR_VALUE);
+    updateAnalogI2CInputs(10, 5, 255, &smokeValue, COLUMN_SMOKE_SENSOR_VALUE);
 
     updateDigitalI2COutputs(&buzzerOn, &ledOn);
 
