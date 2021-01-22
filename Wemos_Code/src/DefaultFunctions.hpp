@@ -91,7 +91,7 @@ void initI2C()
 */
 void initWifi()
 {
-    const char *ssid = "PJSDV_TEMP";
+    const char *ssid = "PJSDV_Groep13";
     const char *password = "allhailthemightypi";
 
     Serial.printf("[WiFi] Connecting to Pi...\n");
