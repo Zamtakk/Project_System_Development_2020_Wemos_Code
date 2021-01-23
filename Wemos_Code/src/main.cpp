@@ -1,4 +1,4 @@
-#define COLUMN
+#define SIMULATED_DEVICE
 
 #ifdef BED
 #include "Bed.hpp"
